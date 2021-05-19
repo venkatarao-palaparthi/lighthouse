@@ -20,45 +20,27 @@ const decode = typeof btoa !== 'undefined' ?
  * @param {string} string
  */
 function toBinary(string) {
-  // const codePoints = [...string].map(c => c.codePointAt(0) || 0);
-  // return encode(String.fromCharCode(...new Uint8Array(codePoints)));
-
+  const bytes = new TextEncoder().encode(string);
+  let bytesAsString = '';
   const chunkSize = 10000;
-  let str = '';
-  for (let i = 0; i < string.length; i += chunkSize) {
-    const codeUnits = new Uint16Array(Math.min(chunkSize, string.length - i));
-    for (let i = 0; i < codeUnits.length; i++) {
-      codeUnits[i] = string.charCodeAt(i);
-    }
-    str += String.fromCharCode(...new Uint8Array(codeUnits.buffer));
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    bytesAsString += String.fromCharCode(...new Uint8Array(bytes.buffer.slice(i, i + chunkSize)));
   }
 
-  return encode(str);
+  const encoded = encode(bytesAsString);
+  return encoded;
 }
 
 /**
  * @param {string} encoded
  */
 function fromBinary(encoded) {
-  // const binary = decode(encoded);
-  // const bytes = new Uint8Array(binary.length);
-  // for (let i = 0; i < bytes.length; i++) {
-  //   bytes[i] = binary.charCodeAt(i);
-  // }
-  // return String.fromCodePoint(...new Uint16Array(bytes.buffer));
-
-  const chunkSize = 10000;
-  let str = '';
   const decoded = decode(encoded);
-  for (let i = 0; i < decoded.length; i += chunkSize) {
-    const bytes = new Uint8Array(Math.min(chunkSize, decoded.length - i));
-    for (let j = 0; j < bytes.length; j++) {
-      bytes[j] = decoded.charCodeAt(i + j);
-    }
-    str += String.fromCharCode(...new Uint16Array(bytes.buffer));
+  const bytes = new Uint8Array(decoded.length);
+  for (let i = 0; i < bytes.length; i++) {
+    bytes[i] = decoded.charCodeAt(i);
   }
-
-  return str;
+  return new TextDecoder().decode(bytes);
 }
 
 if (typeof module !== 'undefined' && module.exports) {

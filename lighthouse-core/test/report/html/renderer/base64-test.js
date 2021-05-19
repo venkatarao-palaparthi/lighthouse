@@ -20,6 +20,7 @@ describe('base64', () => {
   it('works', () => {
     test('');
     test('hello');
+    test('😃');
     test('{åß∂œ∑´}');
     test('Some examples of emoji are 😃, 🧘🏻‍♂️, 🌍, 🍞, 🚗, 📞, 🎉, ♥️, 🍆, and 🏁.');
     test('.'.repeat(125183));

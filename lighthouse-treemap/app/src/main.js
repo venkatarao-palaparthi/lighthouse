@@ -735,16 +735,13 @@ function showError(message) {
 }
 
 async function main() {
+  const queryParams = new URLSearchParams(window.location.search);
+  const hashParams = location.hash ? JSON.parse(Base64.fromBinary(location.hash.substr(1))) : {};
   /** @type {Record<string, any>} */
-  let params = {};
-  if (Object.fromEntries) {
-    const queryParams = new URLSearchParams(window.location.search);
-    const hashParams = location.hash ? JSON.parse(Base64.fromBinary(location.hash.substr(1))) : {};
-    params = {
-      ...Object.fromEntries(queryParams.entries()),
-      ...hashParams,
-    };
-  }
+  const params = {
+    ...Object.fromEntries(queryParams.entries()),
+    ...hashParams,
+  };
 
   if (window.__treemapOptions) {
     // Prefer the hardcoded options from a saved HTML file above all.
