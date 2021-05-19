@@ -57,6 +57,7 @@ async function run() {
       /* eslint-enable max-len */
       buildStrings(),
       {path: '../../lighthouse-core/report/html/renderer/i18n.js'},
+      {path: '../../lighthouse-core/report/html/renderer/base64.js'},
       {path: 'src/**/*'},
     ],
     assets: [

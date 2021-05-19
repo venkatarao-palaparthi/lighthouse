@@ -1,4 +1,5 @@
 import _TreemapUtil = require('../app/src/util.js');
+import _Base64 = require('../../lighthouse-core/report/html/renderer/base64.js');
 
 export type Strings = Record<LH.Locale, import('../../lighthouse-core/lib/i18n/locales').LhlMessages>;
 
@@ -33,6 +34,7 @@ declare global {
     sort(data: any): void;
   };
   var TreemapUtil: typeof _TreemapUtil;
+  var Base64: typeof _Base64;
   var strings: Strings;
 
   interface Window {

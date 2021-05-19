@@ -23,7 +23,7 @@
  * the report.
  */
 
-/* globals getFilenamePrefix Util ElementScreenshotRenderer */
+/* globals getFilenamePrefix Util Base64 ElementScreenshotRenderer */
 
 /** @typedef {import('./dom')} DOM */
 
@@ -573,6 +573,7 @@ class ReportUIFeatures {
     const url = getAppsOrigin() + '/treemap/';
     const windowName = `treemap-${json.requestedUrl}`;
 
+    method= 'url';
     if (method === 'postMessage') {
       ReportUIFeatures.openTabAndSendData(treemapOptions, url, windowName);
     } else {
@@ -603,7 +604,6 @@ class ReportUIFeatures {
       }
     });
 
-    // The popup's window.name is keyed by version+url+fetchTime, so we reuse/select tabs correctly
     const popup = window.open(url, windowName);
   }
 
@@ -616,21 +616,8 @@ class ReportUIFeatures {
    */
   static openTabWithUrlData(data, url_, windowName) {
     const url = new URL(url_);
-    url.hash = toBinary(JSON.stringify(data));
-
-    // The popup's window.name is keyed by version+url+fetchTime, so we reuse/select tabs correctly
+    url.hash = Base64.toBinary(JSON.stringify(data));
     window.open(url.toString(), windowName);
-
-    /**
-     * @param {string} string
-     */
-    function toBinary(string) {
-      const codeUnits = new Uint16Array(string.length);
-      for (let i = 0; i < codeUnits.length; i++) {
-        codeUnits[i] = string.charCodeAt(i);
-      }
-      return btoa(String.fromCharCode(...new Uint8Array(codeUnits.buffer)));
-    }
   }
 
   /**

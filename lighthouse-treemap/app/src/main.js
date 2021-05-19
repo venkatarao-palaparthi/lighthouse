@@ -7,7 +7,7 @@
 
 /* eslint-env browser */
 
-/* globals I18n webtreemap strings TreemapUtil Tabulator Cell Row */
+/* globals I18n webtreemap strings TreemapUtil Base64 Tabulator Cell Row */
 
 const DUPLICATED_MODULES_IGNORE_THRESHOLD = 1024;
 const DUPLICATED_MODULES_IGNORE_ROOT_RATIO = 0.01;
@@ -734,24 +734,12 @@ function showError(message) {
   document.body.textContent = message;
 }
 
-/**
- * @param {string} encoded
- */
-function fromBinary(encoded) {
-  const binary = atob(encoded);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < bytes.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  return String.fromCharCode(...new Uint16Array(bytes.buffer));
-}
-
 async function main() {
   /** @type {Record<string, any>} */
   let params = {};
   if (Object.fromEntries) {
     const queryParams = new URLSearchParams(window.location.search);
-    const hashParams = location.hash ? JSON.parse(fromBinary(location.hash.substr(1))) : {};
+    const hashParams = location.hash ? JSON.parse(Base64.fromBinary(location.hash.substr(1))) : {};
     params = {
       ...Object.fromEntries(queryParams.entries()),
       ...hashParams,
