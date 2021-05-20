@@ -5,40 +5,26 @@
  */
 'use strict';
 
-/* global self btoa atob */
-
-const encode = typeof btoa !== 'undefined' ?
-  btoa :
-  /** @param {string} str */
-  (str) => Buffer.from(str).toString('base64');
-const decode = typeof btoa !== 'undefined' ?
-  atob :
-  /** @param {string} str */
-  (str) => Buffer.from(str, 'base64').toString();
-
 /**
  * @param {string} string
  */
 function toBinary(string) {
   const bytes = new TextEncoder().encode(string);
-  let bytesAsString = '';
+  let binaryString = '';
   const chunkSize = 10000;
   for (let i = 0; i < bytes.length; i += chunkSize) {
-    bytesAsString += String.fromCharCode(...new Uint8Array(bytes.buffer.slice(i, i + chunkSize)));
+    binaryString += String.fromCharCode(...new Uint8Array(bytes.buffer.slice(i, i + chunkSize)));
   }
-
-  const encoded = encode(bytesAsString);
-  return encoded;
+  return binaryString;
 }
 
 /**
- * @param {string} encoded
+ * @param {string} binaryString
  */
-function fromBinary(encoded) {
-  const decoded = decode(encoded);
-  const bytes = new Uint8Array(decoded.length);
+function fromBinary(binaryString) {
+  const bytes = new Uint8Array(binaryString.length);
   for (let i = 0; i < bytes.length; i++) {
-    bytes[i] = decoded.charCodeAt(i);
+    bytes[i] = binaryString.charCodeAt(i);
   }
   return new TextDecoder().decode(bytes);
 }
