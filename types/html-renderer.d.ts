@@ -36,6 +36,7 @@ declare global {
   var Util: typeof _Util;
   var Base64: typeof _Base64;
   var prepareLabData: typeof _prepareLabData;
+  var pako: typeof import('pako');
 
   interface Window {
     CategoryRenderer: typeof _CategoryRenderer;

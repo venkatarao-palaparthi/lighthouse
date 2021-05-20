@@ -99,6 +99,7 @@ describe('Lighthouse Treemap', () => {
     async function loadFromFragment(options) {
       const json = JSON.stringify(options);
       const encoded = await page.evaluate(`
+        ${fs.readFileSync('pako/dist/pako_inflate.js')}
         ${fs.readFileSync(
           require.resolve('../../lighthouse-core/report/html/renderer/base64.js'), 'utf-8')}
         Base64.toBinary(${JSON.stringify(json)});
