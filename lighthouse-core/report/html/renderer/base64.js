@@ -11,7 +11,9 @@
 function toBinary(string) {
   const bytes = new TextEncoder().encode(string);
   let binaryString = '';
-  const chunkSize = 10000;
+  // This is ~25% faster than building the string one character at a time.
+  // https://jsbench.me/2gkoxazvjl
+  const chunkSize = 5000;
   for (let i = 0; i < bytes.length; i += chunkSize) {
     binaryString += String.fromCharCode(...new Uint8Array(bytes.buffer.slice(i, i + chunkSize)));
   }
