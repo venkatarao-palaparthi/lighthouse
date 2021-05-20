@@ -581,7 +581,6 @@ class ReportUIFeatures {
     method = 'url';
     treemapOptions.lhr.finalUrl += '😃😃';
     treemapOptions.lhr.requestedUrl += '😃😃';
-    debugger;
     if (method === 'postMessage') {
       ReportUIFeatures.openTabAndSendData(treemapOptions, url, windowName);
     } else {
@@ -623,7 +622,6 @@ class ReportUIFeatures {
    * @protected
    */
   static async openTabWithUrlData(data, url_, windowName) {
-    debugger;
     const url = new URL(url_);
     const gzip = Boolean(window.CompressionStream);
     url.hash = await Base64.toBinary(JSON.stringify(data), {

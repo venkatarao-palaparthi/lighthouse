@@ -10,7 +10,7 @@
 /* global document, window */
 
 const fs = require('fs');
-const puppeteer = require('../../node_modules/puppeteer/index.js');
+const puppeteer = require('puppeteer');
 const {server} = require('../../lighthouse-cli/test/fixtures/static-server.js');
 const portNumber = 10200;
 const treemapUrl = `http://localhost:${portNumber}/dist/gh-pages/treemap/index.html`;
@@ -125,7 +125,6 @@ describe('Lighthouse Treemap', () => {
       const options = JSON.parse(JSON.stringify(debugOptions));
       options.lhr.requestedUrl += '😃😃😃';
       const encoded = await page.evaluate(`
-        ${fs.readFileSync(require.resolve('pako/dist/pako_deflate.js'))}
         ${fs.readFileSync(
           require.resolve('../../lighthouse-core/report/html/renderer/base64.js'), 'utf-8')}
         Base64.toBinary(${JSON.stringify(options)}, {gzip: false});

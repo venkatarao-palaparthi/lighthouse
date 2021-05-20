@@ -152,7 +152,7 @@
     "package-json-versionify": "^1.0.4",
     "prettier": "^1.14.3",
     "pretty-json-stringify": "^0.0.2",
-    "puppeteer": "^1.19.0",
+    "puppeteer": "^9.1.1",
     "tabulator-tables": "^4.9.3",
     "terser": "^5.3.8",
     "typed-query-selector": "^2.4.0",
