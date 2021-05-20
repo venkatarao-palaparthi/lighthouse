@@ -5,6 +5,17 @@
  */
 'use strict';
 
+/* global self btoa atob */
+
+const encode = typeof btoa !== 'undefined' ?
+  btoa :
+  /** @param {string} str */
+  (str) => Buffer.from(str).toString('base64');
+const decode = typeof btoa !== 'undefined' ?
+  atob :
+  /** @param {string} str */
+  (str) => Buffer.from(str, 'base64').toString();
+
 /**
  * @param {string} string
  */
@@ -17,13 +28,14 @@ function toBinary(string) {
   for (let i = 0; i < bytes.length; i += chunkSize) {
     binaryString += String.fromCharCode(...new Uint8Array(bytes.buffer.slice(i, i + chunkSize)));
   }
-  return binaryString;
+  return encode(binaryString);
 }
 
 /**
- * @param {string} binaryString
+ * @param {string} encoded
  */
-function fromBinary(binaryString) {
+function fromBinary(encoded) {
+  const binaryString = decode(encoded);
   const bytes = new Uint8Array(binaryString.length);
   for (let i = 0; i < bytes.length; i++) {
     bytes[i] = binaryString.charCodeAt(i);
