@@ -15,6 +15,7 @@ const decode = typeof btoa !== 'undefined' ?
   atob :
   /** @param {string} str */
   (str) => Buffer.from(str, 'base64').toString();
+const pako_ = typeof pako !== 'undefined' ? pako : require('pako');
 
 // /**
 //  * @param {string} string
@@ -47,7 +48,7 @@ const decode = typeof btoa !== 'undefined' ?
  * @param {string} string
  */
 function toBinaryGzip(string) {
-  const bytes = pako.gzip(string);
+  const bytes = pako_.gzip(string);
   let binaryString = '';
   // This is ~25% faster than building the string one character at a time.
   // https://jsbench.me/2gkoxazvjl
@@ -67,7 +68,7 @@ function fromBinaryGzip(encoded) {
   for (let i = 0; i < bytes.length; i++) {
     bytes[i] = binaryString.charCodeAt(i);
   }
-  return pako.ungzip(bytes, {to: 'string'});
+  return pako_.ungzip(bytes, {to: 'string'});
 }
 
 if (typeof module !== 'undefined' && module.exports) {

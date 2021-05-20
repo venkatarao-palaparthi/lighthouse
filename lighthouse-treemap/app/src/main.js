@@ -900,6 +900,11 @@ async function main() {
   } else if ('debug' in params) {
     const response = await fetch('debug.json');
     app.init(await response.json());
+  } else if (params.lhr) {
+    const options = {
+      lhr: params.lhr,
+    };
+    app.init(options);
   } else if (params.gist) {
     let json;
     let options;
