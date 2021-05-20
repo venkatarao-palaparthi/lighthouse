@@ -9,6 +9,7 @@
 
 /* global document, window */
 
+const fs = require('fs');
 const puppeteer = require('../../node_modules/puppeteer/index.js');
 const {server} = require('../../lighthouse-cli/test/fixtures/static-server.js');
 const portNumber = 10200;
@@ -77,23 +78,42 @@ describe('Lighthouse Treemap', () => {
       await new Promise(resolve => browser.on('targetcreated', resolve));
       const target = (await browser.targets()).find(target => target.url() === treemapUrl);
       page = await target.page();
-      await openerPage.close();
       await page.waitForFunction(
         () => window.__treemapOptions || document.body.textContent.startsWith('Error'));
     }
 
     it('from window postMessage', async () => {
       await loadFromPostMessage(debugOptions);
-      const options = await page.evaluate(() => window.__treemapOptions);
-      expect(options.lhr.requestedUrl).toBe(debugOptions.lhr.requestedUrl);
+      const optionsInPage = await page.evaluate(() => window.__treemapOptions);
+      expect(optionsInPage.lhr.requestedUrl).toBe(debugOptions.lhr.requestedUrl);
     });
 
     it('handles errors', async () => {
       await loadFromPostMessage({});
-      const options = await page.evaluate(() => window.__treemapOptions);
-      expect(options).toBeUndefined();
+      const optionsInPage = await page.evaluate(() => window.__treemapOptions);
+      expect(optionsInPage).toBeUndefined();
       const error = await page.evaluate(() => document.body.textContent);
       expect(error).toBe('Error: Invalid options');
+    });
+
+    async function loadFromFragment(options) {
+      const json = JSON.stringify(options);
+      const encoded = await page.evaluate(`
+        ${fs.readFileSync(
+          require.resolve('../../lighthouse-core/report/html/renderer/base64.js'), 'utf-8')}
+        Base64.toBinary(${JSON.stringify(json)});
+      `);
+      await page.goto(`${treemapUrl}#${encoded}`);
+      await page.waitForFunction(
+        () => window.__treemapOptions || document.body.textContent.startsWith('Error'));
+    }
+
+    it('from encoded fragment', async () => {
+      const options = JSON.parse(JSON.stringify(debugOptions));
+      options.lhr.requestedUrl += '😃😃😃';
+      await loadFromFragment(options);
+      const optionsInPage = await page.evaluate(() => window.__treemapOptions);
+      expect(optionsInPage.lhr.requestedUrl).toBe(options.lhr.requestedUrl);
     });
   });
 });
