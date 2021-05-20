@@ -573,7 +573,6 @@ class ReportUIFeatures {
     const url = getAppsOrigin() + '/treemap/';
     const windowName = `treemap-${json.requestedUrl}`;
 
-    method= 'url';
     if (method === 'postMessage') {
       ReportUIFeatures.openTabAndSendData(treemapOptions, url, windowName);
     } else {
