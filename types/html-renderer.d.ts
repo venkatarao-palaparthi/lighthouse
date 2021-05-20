@@ -37,6 +37,14 @@ declare global {
   var Base64: typeof _Base64;
   var prepareLabData: typeof _prepareLabData;
   var pako: typeof import('pako');
+  var CompressionStream: {
+    prototype: CompressionStream,
+    new (format: string): CompressionStream,
+  };
+
+  interface CompressionStream extends GenericTransformStream {
+    readonly format: string;
+  }
 
   interface Window {
     CategoryRenderer: typeof _CategoryRenderer;

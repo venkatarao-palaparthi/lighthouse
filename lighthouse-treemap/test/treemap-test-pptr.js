@@ -100,23 +100,38 @@ describe('Lighthouse Treemap', () => {
       expect(error).toBe('Error: Invalid options');
     });
 
-    async function loadFromFragment(options) {
-      const json = JSON.stringify(options);
-      const encoded = await page.evaluate(`
-        ${fs.readFileSync(require.resolve('pako/dist/pako_deflate.js'))}
-        ${fs.readFileSync(
-          require.resolve('../../lighthouse-core/report/html/renderer/base64.js'), 'utf-8')}
-        Base64.toBinary(${JSON.stringify(json)});
-      `);
-      await page.goto(`${treemapUrl}#${encoded}`);
+    async function loadFromFragment(fragment) {
+      await page.goto(`${treemapUrl}#${fragment}`);
       await page.waitForFunction(
         () => window.__treemapOptions || document.body.textContent.startsWith('Error'));
     }
 
-    it('from encoded fragment', async () => {
+    it('from encoded fragment (gzip)', async () => {
       const options = JSON.parse(JSON.stringify(debugOptions));
       options.lhr.requestedUrl += '😃😃😃';
-      await loadFromFragment(options);
+      const encoded = await page.evaluate(`
+        ${fs.readFileSync(require.resolve('pako/dist/pako_deflate.js'))}
+        ${fs.readFileSync(
+          require.resolve('../../lighthouse-core/report/html/renderer/base64.js'), 'utf-8')}
+        Base64.toBinary(${JSON.stringify(options)}, {gzip: true});
+      `);
+
+      await loadFromFragment(encoded);
+      const optionsInPage = await page.evaluate(() => window.__treemapOptions);
+      expect(optionsInPage.lhr.requestedUrl).toBe(options.lhr.requestedUrl);
+    });
+
+    it('from encoded fragment (no gzip)', async () => {
+      const options = JSON.parse(JSON.stringify(debugOptions));
+      options.lhr.requestedUrl += '😃😃😃';
+      const encoded = await page.evaluate(`
+        ${fs.readFileSync(require.resolve('pako/dist/pako_deflate.js'))}
+        ${fs.readFileSync(
+          require.resolve('../../lighthouse-core/report/html/renderer/base64.js'), 'utf-8')}
+        Base64.toBinary(${JSON.stringify(options)}, {gzip: false});
+      `);
+
+      await loadFromFragment(encoded);
       const optionsInPage = await page.evaluate(() => window.__treemapOptions);
       expect(optionsInPage.lhr.requestedUrl).toBe(options.lhr.requestedUrl);
     });

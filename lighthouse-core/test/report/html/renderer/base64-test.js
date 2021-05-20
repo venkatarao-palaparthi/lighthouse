@@ -11,20 +11,27 @@ const Base64 = require('../../../../report/html/renderer/base64.js');
 
 describe('base64', () => {
   /** @type {string} */
-  function test(str) {
-    const roundtrip = Base64.fromBinary(Base64.toBinary(str));
-    expect(roundtrip.length).toEqual(str.length);
-    expect(roundtrip).toEqual(str);
+  async function test(str) {
+    for (const gzip of [false, true]) {
+      // Already tested in treemap-test-pptr.js
+      // TODO: can we test this in Node?
+      if (gzip) continue;
+
+      const binary = await Base64.toBinary(str, {gzip});
+      const roundtrip = Base64.fromBinary(binary, {gzip});
+      expect(roundtrip.length).toEqual(str.length);
+      expect(roundtrip).toEqual(str);
+    }
   }
 
-  it('works', () => {
-    test('');
-    test('hello');
-    test('😃');
-    test('{åß∂œ∑´}');
-    test('Some examples of emoji are 😃, 🧘🏻‍♂️, 🌍, 🍞, 🚗, 📞, 🎉, ♥️, 🍆, and 🏁.');
-    test('.'.repeat(125183));
-    test('😃'.repeat(125183));
-    test(JSON.stringify(require('../../../../../lighthouse-treemap/app/debug.json')));
+  it('works', async () => {
+    await test('');
+    await test('hello');
+    await test('😃');
+    await test('{åß∂œ∑´}');
+    await test('Some examples of emoji are 😃, 🧘🏻‍♂️, 🌍, 🍞, 🚗, 📞, 🎉, ♥️, 🍆, and 🏁.');
+    await test('.'.repeat(125183));
+    await test('😃'.repeat(125183));
+    await test(JSON.stringify(require('../../../../../lighthouse-treemap/app/debug.json')));
   });
 });

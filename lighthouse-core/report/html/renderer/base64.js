@@ -5,7 +5,7 @@
  */
 'use strict';
 
-/* global self btoa atob pako */
+/* global self btoa atob pako CompressionStream Response */
 
 const encode = typeof btoa !== 'undefined' ?
   btoa :
@@ -15,7 +15,6 @@ const decode = typeof btoa !== 'undefined' ?
   atob :
   /** @param {string} str */
   (str) => Buffer.from(str, 'base64').toString();
-const pako_ = typeof pako !== 'undefined' ? pako : require('pako');
 
 // /**
 //  * @param {string} string
@@ -44,11 +43,27 @@ const pako_ = typeof pako !== 'undefined' ? pako : require('pako');
 //   return new TextDecoder().decode(bytes);
 // }
 
+function getPako() {
+  return typeof pako !== 'undefined' ? pako : require('pako');
+}
+
 /**
  * @param {string} string
+ * @param {{gzip: boolean}} options
  */
-function toBinaryGzip(string) {
-  const bytes = pako_.gzip(string);
+async function toBinary(string, options) {
+  let bytes;
+  if (options.gzip) {
+    const cs = new CompressionStream('gzip');
+    const writer = cs.writable.getWriter();
+    writer.write(new TextEncoder().encode(string));
+    writer.close();
+    const compAb = await new Response(cs.readable).arrayBuffer();
+    bytes = new Uint8Array(compAb);
+  } else {
+    bytes = new TextEncoder().encode(string);
+  }
+
   let binaryString = '';
   // This is ~25% faster than building the string one character at a time.
   // https://jsbench.me/2gkoxazvjl
@@ -61,20 +76,24 @@ function toBinaryGzip(string) {
 
 /**
  * @param {string} encoded
+ * @param {{gzip: boolean}} options
  */
-function fromBinaryGzip(encoded) {
+function fromBinary(encoded, options) {
   const binaryString = decode(encoded);
   const bytes = new Uint8Array(binaryString.length);
   for (let i = 0; i < bytes.length; i++) {
     bytes[i] = binaryString.charCodeAt(i);
   }
-  return pako_.ungzip(bytes, {to: 'string'});
+
+  if (options.gzip) {
+    return getPako().ungzip(bytes, {to: 'string'});
+  } else {
+    return new TextDecoder().decode(bytes);
+  }
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  // module.exports = {toBinary, fromBinary};
-  module.exports = {toBinary: toBinaryGzip, fromBinary: fromBinaryGzip};
+  module.exports = {toBinary, fromBinary};
 } else {
-  // self.Base64 = {toBinary, fromBinary};
-  self.Base64 = {toBinary: toBinaryGzip, fromBinary: fromBinaryGzip};
+  self.Base64 = {toBinary, fromBinary};
 }

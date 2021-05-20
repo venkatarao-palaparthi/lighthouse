@@ -887,7 +887,10 @@ class LighthouseTreemap {
 async function main() {
   const app = new LighthouseTreemap();
   const queryParams = new URLSearchParams(window.location.search);
-  const hashParams = location.hash ? JSON.parse(Base64.fromBinary(location.hash.substr(1))) : {};
+  const gzip = queryParams.get('gzip') === '1';
+  const hashParams = location.hash ?
+    JSON.parse(Base64.fromBinary(location.hash.substr(1), {gzip})) :
+    {};
   /** @type {Record<string, any>} */
   const params = {
     ...Object.fromEntries(queryParams.entries()),

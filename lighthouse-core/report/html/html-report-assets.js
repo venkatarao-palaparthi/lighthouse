@@ -23,8 +23,8 @@ const REPORT_JAVASCRIPT = [
   fs.readFileSync(__dirname + '/renderer/pwa-category-renderer.js', 'utf8'),
   fs.readFileSync(__dirname + '/renderer/report-renderer.js', 'utf8'),
   fs.readFileSync(__dirname + '/renderer/i18n.js', 'utf8'),
-  // TODO: minified version breaks utf8
-  fs.readFileSync(require.resolve('pako/dist/pako_deflate.js'), 'utf-8'),
+  // // TODO: minified version breaks utf8
+  // fs.readFileSync(require.resolve('pako/dist/pako_deflate.js'), 'utf-8'),
   fs.readFileSync(__dirname + '/renderer/base64.js', 'utf8'),
 ].join(';\n');
 const REPORT_CSS = fs.readFileSync(__dirname + '/report-styles.css', 'utf8');
