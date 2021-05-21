@@ -43,7 +43,12 @@ describe('Lighthouse Treemap', () => {
   });
 
   beforeEach(async () => {
-    if (!browser) browser = await puppeteer.launch({headless: true});
+    if (!browser) {
+      browser = await puppeteer.launch({
+        headless: true,
+        executablePath: process.env.CHROME_PATH,
+      });
+    }
     page = await browser.newPage();
     page.on('pageerror', pageError => pageErrors.push(pageError));
   });
@@ -100,23 +105,20 @@ describe('Lighthouse Treemap', () => {
       expect(error).toBe('Error: Invalid options');
     });
 
-    async function loadFromFragment(fragment) {
-      await page.goto(`${treemapUrl}#${fragment}`);
-      await page.waitForFunction(
-        () => window.__treemapOptions || document.body.textContent.startsWith('Error'));
-    }
-
     it('from encoded fragment (gzip)', async () => {
       const options = JSON.parse(JSON.stringify(debugOptions));
       options.lhr.requestedUrl += '😃😃😃';
+      const json = JSON.stringify(options);
       const encoded = await page.evaluate(`
-        ${fs.readFileSync(require.resolve('pako/dist/pako_deflate.js'))}
         ${fs.readFileSync(
           require.resolve('../../lighthouse-core/report/html/renderer/base64.js'), 'utf-8')}
-        Base64.toBinary(${JSON.stringify(options)}, {gzip: true});
+        Base64.toBinary(${JSON.stringify(json)}, {gzip: true});
       `);
 
-      await loadFromFragment(encoded);
+      await page.goto(`${treemapUrl}?gzip=1#${encoded}`);
+      await page.waitForFunction(
+        () => window.__treemapOptions || document.body.textContent.startsWith('Error'));
+
       const optionsInPage = await page.evaluate(() => window.__treemapOptions);
       expect(optionsInPage.lhr.requestedUrl).toBe(options.lhr.requestedUrl);
     });
@@ -124,13 +126,17 @@ describe('Lighthouse Treemap', () => {
     it('from encoded fragment (no gzip)', async () => {
       const options = JSON.parse(JSON.stringify(debugOptions));
       options.lhr.requestedUrl += '😃😃😃';
+      const json = JSON.stringify(options);
       const encoded = await page.evaluate(`
         ${fs.readFileSync(
           require.resolve('../../lighthouse-core/report/html/renderer/base64.js'), 'utf-8')}
-        Base64.toBinary(${JSON.stringify(options)}, {gzip: false});
+        Base64.toBinary(${JSON.stringify(json)}, {gzip: false});
       `);
 
-      await loadFromFragment(encoded);
+      await page.goto(`${treemapUrl}#${encoded}`);
+      await page.waitForFunction(
+        () => window.__treemapOptions || document.body.textContent.startsWith('Error'));
+
       const optionsInPage = await page.evaluate(() => window.__treemapOptions);
       expect(optionsInPage.lhr.requestedUrl).toBe(options.lhr.requestedUrl);
     });
