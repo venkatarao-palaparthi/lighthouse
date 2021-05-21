@@ -10,13 +10,17 @@ const Base64 = require('../../../../report/html/renderer/base64.js');
 /* eslint-env jest */
 
 describe('base64', () => {
+  beforeAll(() => {
+    global.pako = require('pako');
+  });
+
+  afterAll(() => {
+    global.pako = undefined;
+  });
+
   /** @type {string} */
   async function test(str) {
     for (const gzip of [false, true]) {
-      // Already tested in treemap-test-pptr.js
-      // TODO: can we test this in Node?
-      if (gzip) continue;
-
       const binary = await Base64.toBinary(str, {gzip});
       const roundtrip = Base64.fromBinary(binary, {gzip});
       expect(roundtrip.length).toEqual(str.length);

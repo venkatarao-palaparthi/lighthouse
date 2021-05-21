@@ -11,28 +11,29 @@ const encode = typeof btoa !== 'undefined' ?
   btoa :
   /** @param {string} str */
   (str) => Buffer.from(str).toString('base64');
-const decode = typeof btoa !== 'undefined' ?
+const decode = typeof atob !== 'undefined' ?
   atob :
   /** @param {string} str */
   (str) => Buffer.from(str, 'base64').toString();
 
-function getPako() {
-  return typeof pako !== 'undefined' ? pako : require('pako');
-}
-
 /**
  * @param {string} string
  * @param {{gzip: boolean}} options
+ * @return {Promise<string>}
  */
 async function toBinary(string, options) {
   let bytes;
   if (options.gzip) {
-    const cs = new CompressionStream('gzip');
-    const writer = cs.writable.getWriter();
-    writer.write(new TextEncoder().encode(string));
-    writer.close();
-    const compAb = await new Response(cs.readable).arrayBuffer();
-    bytes = new Uint8Array(compAb);
+    if (typeof CompressionStream !== 'undefined') {
+      const cs = new CompressionStream('gzip');
+      const writer = cs.writable.getWriter();
+      writer.write(new TextEncoder().encode(string));
+      writer.close();
+      const compAb = await new Response(cs.readable).arrayBuffer();
+      bytes = new Uint8Array(compAb);
+    } else {
+      bytes = pako.gzip(string);
+    }
   } else {
     bytes = new TextEncoder().encode(string);
   }
@@ -50,6 +51,7 @@ async function toBinary(string, options) {
 /**
  * @param {string} encoded
  * @param {{gzip: boolean}} options
+ * @return {string}
  */
 function fromBinary(encoded, options) {
   const binaryString = decode(encoded);
@@ -59,7 +61,7 @@ function fromBinary(encoded, options) {
   }
 
   if (options.gzip) {
-    return getPako().ungzip(bytes, {to: 'string'});
+    return pako.ungzip(bytes, {to: 'string'});
   } else {
     return new TextDecoder().decode(bytes);
   }
