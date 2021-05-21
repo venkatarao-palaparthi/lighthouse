@@ -17,25 +17,28 @@ const decode = typeof atob !== 'undefined' ?
   (str) => Buffer.from(str, 'base64').toString();
 
 /**
+ * Takes an UTF-8 string and returns a URL-safe base64 encoded string.
+ * If gzip is true, the UTF-8 bytes are gzipped before base64'd, using
+ * CompressionStream (currently only in Chrome), falling back to pak
+ * (which is only used to encode in our Node tests).
  * @param {string} string
  * @param {{gzip: boolean}} options
  * @return {Promise<string>}
  */
 async function toBinary(string, options) {
-  let bytes;
+  let bytes = new TextEncoder().encode(string);
+
   if (options.gzip) {
     if (typeof CompressionStream !== 'undefined') {
       const cs = new CompressionStream('gzip');
       const writer = cs.writable.getWriter();
-      writer.write(new TextEncoder().encode(string));
+      writer.write(bytes);
       writer.close();
       const compAb = await new Response(cs.readable).arrayBuffer();
       bytes = new Uint8Array(compAb);
     } else {
       bytes = pako.gzip(string);
     }
-  } else {
-    bytes = new TextEncoder().encode(string);
   }
 
   let binaryString = '';
