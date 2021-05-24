@@ -71,6 +71,7 @@ describe('Lighthouse Treemap', () => {
       expect(options.lhr.requestedUrl).toBe(debugOptions.lhr.requestedUrl);
     });
 
+    // TODO: remove for v8
     async function loadFromPostMessage(options) {
       const openerPage = await browser.newPage();
       await openerPage.evaluate((treemapUrl, options) => {

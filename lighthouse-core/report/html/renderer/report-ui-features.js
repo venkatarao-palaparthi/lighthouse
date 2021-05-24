@@ -157,8 +157,7 @@ class ReportUIFeatures {
       this.addButton({
         text: Util.i18n.strings.viewTreemapLabel,
         icon: 'treemap',
-        onClick: () => ReportUIFeatures.openTreemap(
-          this.json, this._dom.isDevTools() ? 'url' : 'postMessage'),
+        onClick: () => ReportUIFeatures.openTreemap(this.json),
       });
     }
 
@@ -532,28 +531,35 @@ class ReportUIFeatures {
   }
 
   /**
+   * The popup's window.name is keyed by version+url+fetchTime, so we reuse/select tabs correctly.
+   * @param {LH.Result} json
+   * @protected
+   */
+  static computeWindowNameSuffix(json) {
+    // @ts-ignore - If this is a v2 LHR, use old `generatedTime`.
+    const fallbackFetchTime = /** @type {string} */ (json.generatedTime);
+    const fetchTime = json.fetchTime || fallbackFetchTime;
+    return `${json.lighthouseVersion}-${json.requestedUrl}-${fetchTime}`;
+  }
+
+  /**
    * Opens a new tab to the online viewer and sends the local page's JSON results
    * to the online viewer using postMessage.
    * @param {LH.Result} json
    * @protected
    */
   static openTabAndSendJsonReportToViewer(json) {
-    // The popup's window.name is keyed by version+url+fetchTime, so we reuse/select tabs correctly
-    // @ts-ignore - If this is a v2 LHR, use old `generatedTime`.
-    const fallbackFetchTime = /** @type {string} */ (json.generatedTime);
-    const fetchTime = json.fetchTime || fallbackFetchTime;
-    const windowName = `${json.lighthouseVersion}-${json.requestedUrl}-${fetchTime}`;
+    const windowName = 'viewer-' + this.computeWindowNameSuffix(json);
     const url = getAppsOrigin() + '/viewer/';
     ReportUIFeatures.openTabAndSendData({lhr: json}, url, windowName);
   }
 
   /**
-   * Opens a new tab to the treemap app and sends the JSON results using postMessage.
+   * Opens a new tab to the treemap app and sends the JSON results using URL.fragment
    * @param {LH.Result} json
-   * @param {'postMessage'|'url'} method
    * @protected
    */
-  static openTreemap(json, method = 'postMessage') {
+  static openTreemap(json) {
     const treemapData = json.audits['script-treemap-data'].details;
     if (!treemapData) {
       throw new Error('no script treemap data found');
@@ -573,13 +579,9 @@ class ReportUIFeatures {
       },
     };
     const url = getAppsOrigin() + '/treemap/';
-    const windowName = `treemap-${json.requestedUrl}`;
+    const windowName = 'treemap-' + this.computeWindowNameSuffix(json);
 
-    if (method === 'postMessage') {
-      ReportUIFeatures.openTabAndSendData(treemapOptions, url, windowName);
-    } else {
-      ReportUIFeatures.openTabWithUrlData(treemapOptions, url, windowName);
-    }
+    ReportUIFeatures.openTabWithUrlData(treemapOptions, url, windowName);
   }
 
   /**

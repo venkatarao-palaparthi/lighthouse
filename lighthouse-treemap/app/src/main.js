@@ -919,6 +919,7 @@ async function main() {
     }
     if (options) app.init(options);
   } else {
+    // TODO: remove for v8.
     window.addEventListener('message', e => {
       if (e.source !== self.opener) return;
 
@@ -934,6 +935,7 @@ async function main() {
     });
   }
 
+  // TODO: remove for v8.
   // If the page was opened as a popup, tell the opening window we're ready.
   if (self.opener && !self.opener.closed) {
     self.opener.postMessage({opened: true}, '*');
