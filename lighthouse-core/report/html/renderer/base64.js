@@ -7,11 +7,11 @@
 
 /* global self btoa atob pako CompressionStream Response */
 
-const encode = typeof btoa !== 'undefined' ?
+const toBase64 = typeof btoa !== 'undefined' ?
   btoa :
   /** @param {string} str */
   (str) => Buffer.from(str).toString('base64');
-const decode = typeof atob !== 'undefined' ?
+const fromBase64 = typeof atob !== 'undefined' ?
   atob :
   /** @param {string} str */
   (str) => Buffer.from(str, 'base64').toString();
@@ -19,13 +19,13 @@ const decode = typeof atob !== 'undefined' ?
 /**
  * Takes an UTF-8 string and returns a URL-safe base64 encoded string.
  * If gzip is true, the UTF-8 bytes are gzipped before base64'd, using
- * CompressionStream (currently only in Chrome), falling back to pak
+ * CompressionStream (currently only in Chrome), falling back to pako
  * (which is only used to encode in our Node tests).
  * @param {string} string
  * @param {{gzip: boolean}} options
  * @return {Promise<string>}
  */
-async function toBinary(string, options) {
+async function encode(string, options) {
   let bytes = new TextEncoder().encode(string);
 
   if (options.gzip) {
@@ -48,7 +48,7 @@ async function toBinary(string, options) {
   for (let i = 0; i < bytes.length; i += chunkSize) {
     binaryString += String.fromCharCode(...new Uint8Array(bytes.buffer.slice(i, i + chunkSize)));
   }
-  return encode(binaryString);
+  return toBase64(binaryString);
 }
 
 /**
@@ -56,8 +56,8 @@ async function toBinary(string, options) {
  * @param {{gzip: boolean}} options
  * @return {string}
  */
-function fromBinary(encoded, options) {
-  const binaryString = decode(encoded);
+function decode(encoded, options) {
+  const binaryString = fromBase64(encoded);
   const bytes = new Uint8Array(binaryString.length);
   for (let i = 0; i < bytes.length; i++) {
     bytes[i] = binaryString.charCodeAt(i);
@@ -71,7 +71,7 @@ function fromBinary(encoded, options) {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = {toBinary, fromBinary};
+  module.exports = {encode, decode};
 } else {
-  self.Base64 = {toBinary, fromBinary};
+  self.Base64 = {encode, decode};
 }

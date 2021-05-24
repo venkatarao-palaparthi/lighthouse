@@ -889,7 +889,7 @@ async function main() {
   const queryParams = new URLSearchParams(window.location.search);
   const gzip = queryParams.get('gzip') === '1';
   const hashParams = location.hash ?
-    JSON.parse(Base64.fromBinary(location.hash.substr(1), {gzip})) :
+    JSON.parse(Base64.decode(location.hash.substr(1), {gzip})) :
     {};
   /** @type {Record<string, any>} */
   const params = {
