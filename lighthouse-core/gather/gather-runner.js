@@ -19,7 +19,6 @@ const InstallabilityErrors = require('./gatherers/installability-errors.js');
 const NetworkUserAgent = require('./gatherers/network-user-agent.js');
 const Stacks = require('./gatherers/stacks.js');
 
-
 const UIStrings = {
   /**
    * @description Warning that the web page redirected during testing and that may have affected the load.
