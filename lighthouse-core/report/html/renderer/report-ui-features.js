@@ -499,7 +499,7 @@ class ReportUIFeatures {
         break;
       }
       case 'open-viewer': {
-        ReportUIFeatures.openTabAndSendJsonReportToViewer(this.json);
+        ReportUIFeatures.openViewer(this.json);
         break;
       }
       case 'save-gist': {
@@ -544,14 +544,14 @@ class ReportUIFeatures {
 
   /**
    * Opens a new tab to the online viewer and sends the local page's JSON results
-   * to the online viewer using postMessage.
+   * to the online viewer using URL.fragment
    * @param {LH.Result} json
    * @protected
    */
-  static openTabAndSendJsonReportToViewer(json) {
+  static openViewer(json) {
     const windowName = 'viewer-' + this.computeWindowNameSuffix(json);
     const url = getAppsOrigin() + '/viewer/';
-    ReportUIFeatures.openTabAndSendData({lhr: json}, url, windowName);
+    ReportUIFeatures.openTabWithUrlData({lhr: json}, url, windowName);
   }
 
   /**
@@ -582,32 +582,6 @@ class ReportUIFeatures {
     const windowName = 'treemap-' + this.computeWindowNameSuffix(json);
 
     ReportUIFeatures.openTabWithUrlData(treemapOptions, url, windowName);
-  }
-
-  /**
-   * Opens a new tab to an external page and sends data using postMessage.
-   * @param {{lhr: LH.Result} | LH.Treemap.Options} data
-   * @param {string} url
-   * @param {string} windowName
-   * @protected
-   */
-  static openTabAndSendData(data, url, windowName) {
-    const origin = new URL(url).origin;
-    // Chrome doesn't allow us to immediately postMessage to a popup right
-    // after it's created. Normally, we could also listen for the popup window's
-    // load event, however it is cross-domain and won't fire. Instead, listen
-    // for a message from the target app saying "I'm open".
-    window.addEventListener('message', function msgHandler(messageEvent) {
-      if (messageEvent.origin !== origin) {
-        return;
-      }
-      if (popup && messageEvent.data.opened) {
-        popup.postMessage(data, origin);
-        window.removeEventListener('message', msgHandler);
-      }
-    });
-
-    const popup = window.open(url, windowName);
   }
 
   /**
