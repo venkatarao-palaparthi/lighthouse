@@ -27,7 +27,7 @@ class SpeedIndex extends Audit {
       title: str_(i18n.UIStrings.speedIndexMetric),
       description: str_(UIStrings.description),
       scoreDisplayMode: Audit.SCORING_MODES.NUMERIC,
-      requiredArtifacts: ['traces', 'devtoolsLogs'],
+      requiredArtifacts: ['traces', 'devtoolsLogs', 'GatherContext'],
     };
   }
 
@@ -66,19 +66,25 @@ class SpeedIndex extends Audit {
     const trace = artifacts.traces[Audit.DEFAULT_PASS];
     const devtoolsLog = artifacts.devtoolsLogs[Audit.DEFAULT_PASS];
     const metricComputationData = {trace, devtoolsLog, settings: context.settings};
-    const metricResult = await ComputedSi.request(metricComputationData, context);
-    const options = context.options[context.settings.formFactor];
 
+    try {
+      const metricResult = await ComputedSi.request(metricComputationData, context);
+      const options = context.options[context.settings.formFactor];
 
-    return {
-      score: Audit.computeLogNormalScore(
-        options.scoring,
-        metricResult.timing
-      ),
-      numericValue: metricResult.timing,
-      numericUnit: 'millisecond',
-      displayValue: str_(i18n.UIStrings.seconds, {timeInMs: metricResult.timing}),
-    };
+      return {
+        score: Audit.computeLogNormalScore(
+          options.scoring,
+          metricResult.timing
+        ),
+        numericValue: metricResult.timing,
+        numericUnit: 'millisecond',
+        displayValue: str_(i18n.UIStrings.seconds, {timeInMs: metricResult.timing}),
+      };
+    } catch (err) {
+      // SpeedIndex can't be computed on every timespan. If it errored, just mark as notApplicable.
+      if (artifacts.GatherContext.gatherMode === 'timespan') return {notApplicable: true, score: 1};
+      throw err;
+    }
   }
 }
 

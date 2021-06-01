@@ -20,7 +20,7 @@ class FirstContentfulPaint3G extends Audit {
       description: 'First Contentful Paint 3G marks the time at which the first text or image is ' +
         `painted while on a 3G network. [Learn more](https://developers.google.com/web/tools/lighthouse/audits/first-contentful-paint).`,
       scoreDisplayMode: Audit.SCORING_MODES.NUMERIC,
-      requiredArtifacts: ['traces', 'devtoolsLogs'],
+      requiredArtifacts: ['traces', 'devtoolsLogs', 'GatherContext'],
     };
   }
 
@@ -43,6 +43,8 @@ class FirstContentfulPaint3G extends Audit {
    * @return {Promise<LH.Audit.Product>}
    */
   static async audit(artifacts, context) {
+    if (artifacts.GatherContext.gatherMode !== 'navigation') return {score: 0, notApplicable: true};
+
     const trace = artifacts.traces[Audit.DEFAULT_PASS];
     const devtoolsLog = artifacts.devtoolsLogs[Audit.DEFAULT_PASS];
     /** @type {Immutable<LH.Config.Settings>} */

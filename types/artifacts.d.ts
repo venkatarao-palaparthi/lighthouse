@@ -142,6 +142,8 @@ declare global {
       FormElements: Artifacts.Form[];
       /** Screenshot of the entire page (rather than just the above the fold content). */
       FullPageScreenshot: Artifacts.FullPageScreenshot | null;
+      /** Information about how Lighthouse artifacts were gathered. */
+      GatherContext: {gatherMode: LH.Gatherer.GatherMode};
       /** Information about event listeners registered on the global object. */
       GlobalListeners: Array<Artifacts.GlobalListener>;
       /** Whether the page ended up on an HTTPS page after attempting to load the HTTP version. */
@@ -646,8 +648,8 @@ declare global {
       export interface TraceTimes {
         timeOrigin: number;
         firstPaint?: number;
-        firstContentfulPaint: number;
-        firstContentfulPaintAllFrames: number;
+        firstContentfulPaint?: number;
+        firstContentfulPaintAllFrames?: number;
         firstMeaningfulPaint?: number;
         largestContentfulPaint?: number;
         largestContentfulPaintAllFrames?: number;
@@ -655,6 +657,8 @@ declare global {
         load?: number;
         domContentLoaded?: number;
       }
+
+      export type NavigationTraceTimes = TraceTimes & Required<Pick<TraceTimes, 'firstContentfulPaint'|'firstContentfulPaintAllFrames'>>
 
       export interface TraceOfTab {
         /** The raw timestamps of key metric events, in microseconds. */
@@ -676,9 +680,9 @@ declare global {
         /** The trace event marking firstPaint, if it was found. */
         firstPaintEvt?: TraceEvent;
         /** The trace event marking firstContentfulPaint, if it was found. */
-        firstContentfulPaintEvt: TraceEvent;
+        firstContentfulPaintEvt?: TraceEvent;
         /** The trace event marking firstContentfulPaint from all frames, if it was found. */
-        firstContentfulPaintAllFramesEvt: TraceEvent;
+        firstContentfulPaintAllFramesEvt?: TraceEvent;
         /** The trace event marking firstMeaningfulPaint, if it was found. */
         firstMeaningfulPaintEvt?: TraceEvent;
         /** The trace event marking largestContentfulPaint, if it was found. */
@@ -689,13 +693,13 @@ declare global {
         loadEvt?: TraceEvent;
         /** The trace event marking domContentLoadedEventEnd, if it was found. */
         domContentLoadedEvt?: TraceEvent;
-        /**
-         * Whether the firstMeaningfulPaintEvt was the definitive event or a fallback to
-         * firstMeaningfulPaintCandidate events had to be attempted.
-         */
-        fmpFellBack: boolean;
-        /** Whether LCP was invalidated without a new candidate. */
-        lcpInvalidated: boolean;
+      }
+
+      export interface NavigationTraceOfTab extends StrictOmit<TraceOfTab, 'timestamps'|'timings'> {
+        timestamps: NavigationTraceTimes;
+        timings: NavigationTraceTimes;
+        firstContentfulPaintEvt: TraceEvent;
+        firstContentfulPaintAllFramesEvt: TraceEvent;
       }
 
       /** Information on a tech stack (e.g. a JS library) used by the page. */
@@ -723,11 +727,11 @@ declare global {
       }
 
       export interface TimingSummary {
-        firstContentfulPaint: number;
+        firstContentfulPaint: number | undefined;
         firstContentfulPaintTs: number | undefined;
         firstContentfulPaintAllFrames: number | undefined;
         firstContentfulPaintAllFramesTs: number | undefined;
-        firstMeaningfulPaint: number;
+        firstMeaningfulPaint: number | undefined;
         firstMeaningfulPaintTs: number | undefined;
         largestContentfulPaint: number | undefined;
         largestContentfulPaintTs: number | undefined;
@@ -744,17 +748,17 @@ declare global {
         totalBlockingTime: number;
         observedTimeOrigin: number;
         observedTimeOriginTs: number;
-        observedNavigationStart: number;
-        observedNavigationStartTs: number;
+        observedNavigationStart: number | undefined;
+        observedNavigationStartTs: number | undefined;
         observedCumulativeLayoutShift: number | undefined;
         observedCumulativeLayoutShiftMainFrame: number | undefined;
         observedTotalCumulativeLayoutShift: number | undefined;
         observedFirstPaint: number | undefined;
         observedFirstPaintTs: number | undefined;
-        observedFirstContentfulPaint: number;
-        observedFirstContentfulPaintTs: number;
-        observedFirstContentfulPaintAllFrames: number;
-        observedFirstContentfulPaintAllFramesTs: number;
+        observedFirstContentfulPaint: number | undefined;
+        observedFirstContentfulPaintTs: number | undefined;
+        observedFirstContentfulPaintAllFrames: number | undefined;
+        observedFirstContentfulPaintAllFramesTs: number | undefined;
         observedFirstMeaningfulPaint: number | undefined;
         observedFirstMeaningfulPaintTs: number | undefined;
         observedLargestContentfulPaint: number | undefined;

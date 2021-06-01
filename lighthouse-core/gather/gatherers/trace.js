@@ -5,6 +5,9 @@
  */
 'use strict';
 
+
+/* global performance */
+
 /**
  * @fileoverview
  * This gatherer collects all network and page devtools protocol traffic during the timespan/navigation.
@@ -12,6 +15,7 @@
  */
 
 const FRGatherer = require('../../fraggle-rock/gather/base-gatherer.js');
+const TraceProcessor = require('../../lib/tracehouse/trace-processor.js');
 
 class Trace extends FRGatherer {
   /** @type {LH.Trace} */
@@ -95,13 +99,20 @@ class Trace extends FRGatherer {
   /**
    * @param {LH.Gatherer.FRTransitionalContext} passContext
    */
-  async startSensitiveInstrumentation({driver}) {
+  async startSensitiveInstrumentation({driver, gatherMode}) {
     // TODO(FR-COMPAT): read additional trace categories from overall settings?
     // TODO(FR-COMPAT): check if CSS/DOM domains have been enabled in another session and warn?
     await driver.defaultSession.sendCommand('Page.enable');
     await driver.defaultSession.sendCommand('Tracing.start', {
       categories: Trace.getDefaultTraceCategories().join(','),
       options: 'sampling-frequency=10000', // 1000 is default and too slow.
+    });
+
+    // Only inject the trace processor timespan marker, for timespan traces.
+    if (gatherMode !== 'timespan') return;
+
+    await driver.executionContext.evaluate(id => performance.mark(id), {
+      args: [TraceProcessor.TIMESPAN_MARKER_ID],
     });
   }
 

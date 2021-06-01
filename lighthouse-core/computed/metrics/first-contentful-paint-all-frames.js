@@ -7,6 +7,7 @@
 
 const makeComputedArtifact = require('../computed-artifact.js');
 const ComputedMetric = require('./metric.js');
+const TraceOfTab = require('../trace-of-tab.js');
 
 class FirstContentfulPaintAllFrames extends ComputedMetric {
   /**
@@ -23,6 +24,7 @@ class FirstContentfulPaintAllFrames extends ComputedMetric {
    */
   static async computeObservedMetric(data) {
     const {traceOfTab} = data;
+    TraceOfTab.assertIsNavigation(traceOfTab);
 
     return {
       timing: traceOfTab.timings.firstContentfulPaintAllFrames,

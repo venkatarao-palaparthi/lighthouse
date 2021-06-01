@@ -8,6 +8,7 @@
 const makeComputedArtifact = require('../computed-artifact.js');
 const ComputedMetric = require('./metric.js');
 const LanternFirstContentfulPaint = require('./lantern-first-contentful-paint.js');
+const TraceOfTab = require('../trace-of-tab.js');
 
 class FirstContentfulPaint extends ComputedMetric {
   /**
@@ -25,6 +26,7 @@ class FirstContentfulPaint extends ComputedMetric {
    */
   static async computeObservedMetric(data) {
     const {traceOfTab} = data;
+    TraceOfTab.assertIsNavigation(traceOfTab);
 
     return {
       timing: traceOfTab.timings.firstContentfulPaint,

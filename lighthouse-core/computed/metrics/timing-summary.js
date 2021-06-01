@@ -42,9 +42,9 @@ class TimingSummary {
 
     const traceOfTab = await TraceOfTab.request(trace, context);
     const speedline = await Speedline.request(trace, context);
-    const firstContentfulPaint = await FirstContentfulPaint.request(metricComputationData, context);
+    const firstContentfulPaint = await requestOrUndefined(FirstContentfulPaint, metricComputationData); // eslint-disable-line max-len
     const firstContentfulPaintAllFrames = await requestOrUndefined(FirstContentfulPaintAllFrames, metricComputationData); // eslint-disable-line max-len
-    const firstMeaningfulPaint = await FirstMeaningfulPaint.request(metricComputationData, context);
+    const firstMeaningfulPaint = await requestOrUndefined(FirstMeaningfulPaint, metricComputationData); // eslint-disable-line max-len
     const largestContentfulPaint = await requestOrUndefined(LargestContentfulPaint, metricComputationData); // eslint-disable-line max-len
     const largestContentfulPaintAllFrames = await requestOrUndefined(LargestContentfulPaintAllFrames, metricComputationData); // eslint-disable-line max-len
     const interactive = await requestOrUndefined(Interactive, metricComputationData);
@@ -62,12 +62,12 @@ class TimingSummary {
     /** @type {LH.Artifacts.TimingSummary} */
     const metrics = {
       // Include the simulated/observed performance metrics
-      firstContentfulPaint: firstContentfulPaint.timing,
-      firstContentfulPaintTs: firstContentfulPaint.timestamp,
+      firstContentfulPaint: firstContentfulPaint && firstContentfulPaint.timing,
+      firstContentfulPaintTs: firstContentfulPaint && firstContentfulPaint.timestamp,
       firstContentfulPaintAllFrames: firstContentfulPaintAllFrames && firstContentfulPaintAllFrames.timing, // eslint-disable-line max-len
       firstContentfulPaintAllFramesTs: firstContentfulPaintAllFrames && firstContentfulPaintAllFrames.timestamp, // eslint-disable-line max-len
-      firstMeaningfulPaint: firstMeaningfulPaint.timing,
-      firstMeaningfulPaintTs: firstMeaningfulPaint.timestamp,
+      firstMeaningfulPaint: firstMeaningfulPaint && firstMeaningfulPaint.timing,
+      firstMeaningfulPaintTs: firstMeaningfulPaint && firstMeaningfulPaint.timestamp,
       largestContentfulPaint: largestContentfulPaint && largestContentfulPaint.timing,
       largestContentfulPaintTs: largestContentfulPaint && largestContentfulPaint.timestamp,
       largestContentfulPaintAllFrames: largestContentfulPaintAllFrames && largestContentfulPaintAllFrames.timing, // eslint-disable-line max-len
@@ -120,7 +120,7 @@ class TimingSummary {
       observedSpeedIndexTs: (speedline.speedIndex + speedline.beginning) * 1000,
     };
     /** @type {Record<string,boolean>} */
-    const debugInfo = {lcpInvalidated: traceOfTab.lcpInvalidated};
+    const debugInfo = {};
 
     return {metrics, debugInfo};
   }

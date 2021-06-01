@@ -8,6 +8,7 @@
 const makeComputedArtifact = require('./computed-artifact.js');
 const LHError = require('../lib/lh-error.js');
 const TraceProcessor = require('../lib/tracehouse/trace-processor.js');
+const LighthouseError = require('../lib/lh-error.js');
 
 // TraceProcessor throws generic errors, but we'd like our special localized and code-specific LHError
 // objects to be thrown instead.
@@ -49,52 +50,25 @@ class TraceOfTab {
     // Trace of tab doesn't require FCP to exist, but all of LH requires it.
     // We'll check that we got an FCP here and re-type accordingly so all of our consumers don't
     // have to repeat this check.
-    const traceOfTab = await LHTraceProcessor.computeTraceOfTab(trace);
-    const {
-      timings,
-      timestamps,
-      firstContentfulPaintEvt,
-      firstContentfulPaintAllFramesEvt,
-    } = traceOfTab;
-    const {
-      firstContentfulPaint: firstContentfulPaintTiming,
-      firstContentfulPaintAllFrames: firstContentfulPaintAllFramesTiming,
-    } = timings;
-    const {
-      firstContentfulPaint: firstContentfulPaintTs,
-      firstContentfulPaintAllFrames: firstContentfulPaintAllFramesTs,
-    } = timestamps;
+    return await LHTraceProcessor.computeTraceOfTab(trace);
+  }
 
-    if (
-      !firstContentfulPaintEvt ||
-      firstContentfulPaintTiming === undefined ||
-      firstContentfulPaintTs === undefined ||
-      // FCP-AF will only be undefined if FCP is also undefined.
-      // These conditions are for enforcing types and should never actually trigger.
-      !firstContentfulPaintAllFramesEvt ||
-      firstContentfulPaintAllFramesTiming === undefined ||
-      firstContentfulPaintAllFramesTs === undefined
-    ) {
-      throw new LHError(LHError.errors.NO_FCP);
+  /**
+   * @param {LH.Artifacts.TraceOfTab} traceOfTab
+   * @return {traceOfTab is LH.Artifacts.NavigationTraceOfTab}
+   */
+  static isNavigation(traceOfTab) {
+    return Boolean(traceOfTab.firstContentfulPaintEvt);
+  }
+
+  /**
+   * @param {LH.Artifacts.TraceOfTab} traceOfTab
+   * @return {asserts traceOfTab is LH.Artifacts.NavigationTraceOfTab}
+   */
+  static assertIsNavigation(traceOfTab) {
+    if (!TraceOfTab.isNavigation(traceOfTab)) {
+      throw new LighthouseError(LighthouseError.errors.NO_FCP);
     }
-
-    // We already know that `traceOfTab` is good to go at this point, but tsc doesn't yet.
-    // Help tsc out by reconstructing the object manually with the known defined values.
-    return {
-      ...traceOfTab,
-      firstContentfulPaintEvt,
-      firstContentfulPaintAllFramesEvt,
-      timings: {
-        ...timings,
-        firstContentfulPaint: firstContentfulPaintTiming,
-        firstContentfulPaintAllFrames: firstContentfulPaintAllFramesTiming,
-      },
-      timestamps: {
-        ...timestamps,
-        firstContentfulPaint: firstContentfulPaintTs,
-        firstContentfulPaintAllFrames: firstContentfulPaintAllFramesTs,
-      },
-    };
   }
 }
 

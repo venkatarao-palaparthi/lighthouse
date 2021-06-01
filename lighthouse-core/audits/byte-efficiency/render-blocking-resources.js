@@ -117,7 +117,7 @@ class RenderBlockingResources extends Audit {
       // TODO: look into adding an `optionalArtifacts` property that captures the non-required nature
       // of CSSUsage
       requiredArtifacts: ['URL', 'TagsBlockingFirstPaint', 'traces', 'devtoolsLogs', 'CSSUsage',
-        'Stacks'],
+        'Stacks', 'GatherContext'],
     };
   }
 
@@ -133,6 +133,7 @@ class RenderBlockingResources extends Audit {
     const traceOfTab = await TraceOfTab.request(trace, context);
     const simulator = await LoadSimulator.request(simulatorData, context);
     const wastedCssBytes = await RenderBlockingResources.computeWastedCSSBytes(artifacts, context);
+    TraceOfTab.assertIsNavigation(traceOfTab);
 
     const metricSettings = {throttlingMethod: 'simulate'};
 
@@ -272,6 +273,8 @@ class RenderBlockingResources extends Audit {
    * @return {Promise<LH.Audit.Product>}
    */
   static async audit(artifacts, context) {
+    if (artifacts.GatherContext.gatherMode !== 'navigation') return {score: 0, notApplicable: true};
+
     const {results, wastedMs} = await RenderBlockingResources.computeResults(artifacts, context);
 
     let displayValue;

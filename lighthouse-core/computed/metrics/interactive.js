@@ -9,6 +9,7 @@ const makeComputedArtifact = require('../computed-artifact.js');
 const ComputedMetric = require('./metric.js');
 const LanternInteractive = require('./lantern-interactive.js');
 
+const TraceOfTab = require('../trace-of-tab.js');
 const NetworkMonitor = require('../../gather/driver/network-monitor.js');
 const TracingProcessor = require('../../lib/tracehouse/trace-processor.js');
 const LHError = require('../../lib/lh-error.js');
@@ -88,6 +89,7 @@ class Interactive extends ComputedMetric {
    * @return {{cpuQuietPeriod: TimePeriod, networkQuietPeriod: TimePeriod, cpuQuietPeriods: Array<TimePeriod>, networkQuietPeriods: Array<TimePeriod>}}
    */
   static findOverlappingQuietPeriods(longTasks, networkRecords, traceOfTab) {
+    TraceOfTab.assertIsNavigation(traceOfTab);
     const FcpTsInMs = traceOfTab.timestamps.firstContentfulPaint / 1000;
 
     /** @type {function(TimePeriod):boolean} */
@@ -155,6 +157,7 @@ class Interactive extends ComputedMetric {
    */
   static computeObservedMetric(data) {
     const {traceOfTab, networkRecords} = data;
+    TraceOfTab.assertIsNavigation(traceOfTab);
 
     if (!traceOfTab.timestamps.domContentLoaded) {
       throw new LHError(LHError.errors.NO_DCL);

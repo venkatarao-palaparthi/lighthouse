@@ -19,7 +19,7 @@
 /** @typedef {Omit<LH.Artifacts.TraceTimes, 'firstContentfulPaint'|'firstContentfulPaintAllFrames'> & {firstContentfulPaint?: number, firstContentfulPaintAllFrames?: number}} TraceTimesWithoutFCP */
 /** @typedef {Omit<TraceTimesWithoutFCP, 'traceEnd'>} TraceTimesWithoutFCPAndTraceEnd */
 /** @typedef {Omit<LH.Artifacts.TraceOfTab, 'firstContentfulPaintEvt'|'firstContentfulPaintAllFramesEvt'|'timings'|'timestamps'> & {timings: TraceTimesWithoutFCP, timestamps: TraceTimesWithoutFCP, firstContentfulPaintEvt?: LH.Artifacts.TraceOfTab['firstContentfulPaintEvt'], firstContentfulPaintAllFramesEvt?: LH.Artifacts.TraceOfTab['largestContentfulPaintAllFramesEvt']}} TraceOfTabWithoutFCP */
-/** @typedef {'lastNavigationStart'|'firstResourceSendRequest'} TimeOriginDeterminationMethod */
+/** @typedef {'lastNavigationStart'|'firstResourceSendRequest'|'lighthouseMarker'|'auto'} TimeOriginDeterminationMethod */
 /** @typedef {Omit<LH.TraceEvent, 'name'|'args'> & {name: 'FrameCommittedInBrowser', args: {data: {frame: string, url: string, parent?: string}}}} FrameCommittedEvent */
 /** @typedef {Omit<LH.TraceEvent, 'name'|'args'> & {name: 'largestContentfulPaint::Invalidate'|'largestContentfulPaint::Candidate', args: {data?: {size?: number}, frame: string}}} LCPEvent */
 /** @typedef {Omit<LH.TraceEvent, 'name'|'args'> & {name: 'largestContentfulPaint::Candidate', args: {data: {size: number}, frame: string}}} LCPCandidateEvent */
@@ -41,6 +41,8 @@ const SCHEDULABLE_TASK_TITLE_ALT2 = 'ThreadControllerImpl::DoWork';
 const SCHEDULABLE_TASK_TITLE_ALT3 = 'TaskQueueManager::ProcessTaskFromWorkQueue';
 
 class TraceProcessor {
+  static TIMESPAN_MARKER_ID = '__lighthouseTimespanStart__'
+
   /**
    * @return {Error}
    */
@@ -53,6 +55,13 @@ class TraceProcessor {
    */
   static createNoResourceSendRequestError() {
     return new Error('No ResourceSendRequest event found');
+  }
+
+  /**
+   * @return {Error}
+   */
+  static createNoLighthouseMarkerError() {
+    return new Error('No Lighthouse timespan marker event found');
   }
 
   /**
@@ -513,7 +522,7 @@ class TraceProcessor {
    *
    * @param {LH.TraceEvent[]} events
    * @param {LH.TraceEvent} timeOriginEvent
-   * @return {{lcp: LCPEvent | undefined, invalidated: boolean}}
+   * @return {{lcp: LCPEvent | undefined}}
    */
   static computeValidLCPAllFrames(events, timeOriginEvent) {
     const lcpEvents = events.filter(this.isLCPEvent).reverse();
@@ -541,8 +550,6 @@ class TraceProcessor {
 
     return {
       lcp: maxLcpAcrossFrames,
-      // LCP events were found, but final LCP event of every frame was an invalidate event.
-      invalidated: Boolean(!maxLcpAcrossFrames && finalLcpEventsByFrame.size),
     };
   }
 
@@ -579,7 +586,7 @@ class TraceProcessor {
    * @return {TraceOfTabWithoutFCP}
   */
   static computeTraceOfTab(trace, options) {
-    const {timeOriginDeterminationMethod = 'lastNavigationStart'} = options || {};
+    const {timeOriginDeterminationMethod = 'auto'} = options || {};
 
     // Parse the trace for our key events and sort them by timestamp. Note: sort
     // *must* be stable to keep events correctly nested.
@@ -703,8 +710,6 @@ class TraceProcessor {
       largestContentfulPaintAllFramesEvt: lcpAllFramesEvt,
       loadEvt: frameTimings.loadEvt,
       domContentLoadedEvt: frameTimings.domContentLoadedEvt,
-      fmpFellBack: frameTimings.fmpFellBack,
-      lcpInvalidated: frameTimings.lcpInvalidated,
     };
   }
 
@@ -746,6 +751,17 @@ class TraceProcessor {
    * @return {LH.TraceEvent}
    */
   static computeTimeOrigin(traceEventSubsets, method) {
+    const lastNavigationStart = () => {
+      // Our time origin will be the last frame navigation in the trace
+      const frameEvents = traceEventSubsets.frameEvents;
+      return frameEvents.filter(this._isNavigationStartOfInterest).pop();
+    };
+
+    const lighthouseMarker = () => {
+      const frameEvents = traceEventSubsets.keyEvents;
+      return frameEvents.find(evt => evt.name === TraceProcessor.TIMESPAN_MARKER_ID);
+    };
+
     switch (method) {
       case 'firstResourceSendRequest': {
         // Our time origin will be the timestamp of the first request that's sent in the frame.
@@ -758,11 +774,19 @@ class TraceProcessor {
         return fetchStart;
       }
       case 'lastNavigationStart': {
-        // Our time origin will be the last frame navigation in the trace
-        const frameEvents = traceEventSubsets.frameEvents;
-        const navigationStart = frameEvents.filter(this._isNavigationStartOfInterest).pop();
+        const navigationStart = lastNavigationStart();
         if (!navigationStart) throw this.createNoNavstartError();
         return navigationStart;
+      }
+      case 'lighthouseMarker': {
+        const marker = lighthouseMarker();
+        if (!marker) throw this.createNoLighthouseMarkerError();
+        return marker;
+      }
+      case 'auto': {
+        const marker = lighthouseMarker() || lastNavigationStart();
+        if (!marker) throw this.createNoLighthouseMarkerError();
+        return marker;
       }
     }
   }
@@ -785,25 +809,9 @@ class TraceProcessor {
     );
 
     // fMP will follow at/after the FP
-    let firstMeaningfulPaint = frameEvents.find(
+    const firstMeaningfulPaint = frameEvents.find(
       e => e.name === 'firstMeaningfulPaint' && e.ts > timeOriginEvt.ts
     );
-    let fmpFellBack = false;
-
-    // If there was no firstMeaningfulPaint event found in the trace, the network idle detection
-    // may have not been triggered before Lighthouse finished tracing.
-    // In this case, we'll use the last firstMeaningfulPaintCandidate we can find.
-    // However, if no candidates were found (a bogus trace, likely), we fail.
-    if (!firstMeaningfulPaint) {
-      const fmpCand = 'firstMeaningfulPaintCandidate';
-      fmpFellBack = true;
-      log.verbose('trace-of-tab', `No firstMeaningfulPaint found, falling back to last ${fmpCand}`);
-      const lastCandidate = frameEvents.filter(e => e.name === fmpCand).pop();
-      if (!lastCandidate) {
-        log.verbose('trace-of-tab', 'No `firstMeaningfulPaintCandidate` events found in trace');
-      }
-      firstMeaningfulPaint = lastCandidate;
-    }
 
     // This function accepts events spanning multiple frames, but this usage will only provide events from the main frame.
     const lcpResult = this.computeValidLCPAllFrames(frameEvents, timeOriginEvt);
@@ -849,8 +857,6 @@ class TraceProcessor {
       largestContentfulPaintEvt: lcpResult.lcp,
       loadEvt: load,
       domContentLoadedEvt: domContentLoaded,
-      fmpFellBack,
-      lcpInvalidated: lcpResult.invalidated,
     };
   }
 }

@@ -6,6 +6,7 @@
 'use strict';
 
 const Audit = require('../audit.js');
+const constants = require('../../config/constants.js');
 const linearInterpolation = require('../../lib/statistics.js').linearInterpolation;
 const Interactive = require('../../computed/metrics/lantern-interactive.js');
 const i18n = require('../../lib/i18n/i18n.js');
@@ -114,12 +115,20 @@ class UnusedBytes extends Audit {
       settings,
     };
 
+    const gatherMode = artifacts.GatherContext && artifacts.GatherContext.gatherMode
+      || 'navigation';
     return NetworkRecords.request(devtoolsLog, context)
       .then(networkRecords =>
         Promise.all([
           this.audit_(artifacts, networkRecords, context),
-          PageDependencyGraph.request({trace, devtoolsLog}, context),
-          LoadSimulator.request(simulatorOptions, context),
+          PageDependencyGraph.request({trace, devtoolsLog}, context).catch(err => {
+            if (gatherMode === 'navigation') throw err;
+            return undefined;
+          }),
+          LoadSimulator.request(simulatorOptions, context).catch(err => {
+            if (gatherMode === 'navigation') throw err;
+            return undefined;
+          }),
         ])
       )
       .then(([result, graph, simulator]) => this.createAuditProduct(result, graph, simulator));
@@ -188,17 +197,19 @@ class UnusedBytes extends Audit {
 
   /**
    * @param {ByteEfficiencyProduct} result
-   * @param {Node} graph
-   * @param {Simulator} simulator
+   * @param {Node|undefined} graph
+   * @param {Simulator|undefined} simulator
    * @return {LH.Audit.Product}
    */
   static createAuditProduct(result, graph, simulator) {
     const results = result.items.sort((itemA, itemB) => itemB.wastedBytes - itemA.wastedBytes);
 
     const wastedBytes = results.reduce((sum, item) => sum + item.wastedBytes, 0);
-    const wastedMs = this.computeWasteWithTTIGraph(results, graph, simulator, {
-      providedWastedBytesByUrl: result.wastedBytesByUrl,
-    });
+    const wastedMs = graph && simulator ?
+      this.computeWasteWithTTIGraph(results, graph, simulator, {
+        providedWastedBytesByUrl: result.wastedBytesByUrl,
+      }) :
+      wastedBytes / constants.throttling.mobileSlow4G.downloadThroughputKbps / 8;
 
     let displayValue = result.displayValue || '';
     if (typeof result.displayValue === 'undefined' && wastedBytes) {

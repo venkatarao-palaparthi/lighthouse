@@ -182,6 +182,7 @@ class PerformanceCategoryRenderer extends CategoryRenderer {
     const metricsBoxesEl = this.dom.createChildOf(metricAuditsEl, 'div', 'lh-metrics-container');
 
     metricAudits.forEach(item => {
+      if (item.result.scoreDisplayMode === 'notApplicable') return;
       metricsBoxesEl.appendChild(this._renderMetric(item));
     });
 
