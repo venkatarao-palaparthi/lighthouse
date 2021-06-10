@@ -23,7 +23,7 @@
  * the report.
  */
 
-/* globals getFilenamePrefix Util Base64 ElementScreenshotRenderer */
+/* globals getFilenamePrefix Util TextEncoding ElementScreenshotRenderer */
 
 /** @typedef {import('./dom')} DOM */
 
@@ -180,15 +180,18 @@ class ReportUIFeatures {
   }
 
   /**
-   * @param {{text: string, icon?: string, onClick: () => void}} opts
+   * @param {{container?: Element, text: string, icon?: string, onClick: () => void}} opts
    */
   addButton(opts) {
+    // report-ui-features doesn't have a reference to the root report el, and PSI has
+    // 2 reports on the page (and not even attached to DOM when installFeatures is called..)
+    // so we need a container option to specify where the element should go.
     const metricsEl = this._document.querySelector('.lh-audit-group--metrics');
-    // Not supported without metrics group.
-    if (!metricsEl) return;
+    const containerEl = opts.container || metricsEl;
+    if (!containerEl) return;
 
-    let buttonsEl = metricsEl.querySelector('.lh-buttons');
-    if (!buttonsEl) buttonsEl = this._dom.createChildOf(metricsEl, 'div', 'lh-buttons');
+    let buttonsEl = containerEl.querySelector('.lh-buttons');
+    if (!buttonsEl) buttonsEl = this._dom.createChildOf(containerEl, 'div', 'lh-buttons');
 
     const classes = [
       'lh-button',
@@ -557,7 +560,6 @@ class ReportUIFeatures {
   /**
    * Opens a new tab to the treemap app and sends the JSON results using URL.fragment
    * @param {LH.Result} json
-   * @protected
    */
   static openTreemap(json) {
     const treemapData = json.audits['script-treemap-data'].details;
@@ -594,7 +596,7 @@ class ReportUIFeatures {
   static async openTabWithUrlData(data, url_, windowName) {
     const url = new URL(url_);
     const gzip = Boolean(window.CompressionStream);
-    url.hash = await Base64.encode(JSON.stringify(data), {
+    url.hash = await TextEncoding.toBase64(JSON.stringify(data), {
       gzip,
     });
     if (gzip) url.searchParams.set('gzip', '1');

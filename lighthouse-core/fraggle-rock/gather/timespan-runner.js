@@ -13,7 +13,7 @@ const {
   awaitArtifacts,
 } = require('./runner-helpers.js');
 const {initializeConfig} = require('../config/config.js');
-const {getBaseArtifacts} = require('./base-artifacts.js');
+const {getBaseArtifacts, finalizeArtifacts} = require('./base-artifacts.js');
 
 /**
  * @param {{page: import('puppeteer').Page, config?: LH.Config.Json}} options
@@ -36,6 +36,7 @@ async function startTimespan(options) {
     artifactState,
     computedCache,
     gatherMode: 'timespan',
+    settings: config.settings,
   };
 
   await collectPhaseArtifacts({phase: 'startInstrumentation', ...phaseOptions});
@@ -55,7 +56,7 @@ async function startTimespan(options) {
           await collectPhaseArtifacts({phase: 'getArtifact', ...phaseOptions});
 
           const artifacts = await awaitArtifacts(artifactState);
-          return /** @type {LH.Artifacts} */ ({...baseArtifacts, ...artifacts}); // Cast to drop Partial<>
+          return finalizeArtifacts(baseArtifacts, artifacts);
         },
         {
           url: finalUrl,

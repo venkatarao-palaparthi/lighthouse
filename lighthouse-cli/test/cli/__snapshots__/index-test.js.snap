@@ -34,9 +34,6 @@ Object {
       "path": "final-screenshot",
     },
     Object {
-      "path": "metrics/estimated-input-latency",
-    },
-    Object {
       "path": "metrics/total-blocking-time",
     },
     Object {
@@ -50,9 +47,6 @@ Object {
     },
     Object {
       "path": "server-response-time",
-    },
-    Object {
-      "path": "metrics/first-cpu-idle",
     },
     Object {
       "path": "metrics/interactive",
@@ -167,6 +161,9 @@ Object {
     },
     Object {
       "path": "preload-lcp-image",
+    },
+    Object {
+      "path": "csp-xss",
     },
     Object {
       "path": "full-page-screenshot",
@@ -370,7 +367,7 @@ Object {
       "path": "byte-efficiency/unused-javascript",
     },
     Object {
-      "path": "byte-efficiency/uses-webp-images",
+      "path": "byte-efficiency/modern-image-formats",
     },
     Object {
       "path": "byte-efficiency/uses-optimized-images",
@@ -765,6 +762,11 @@ Object {
           "weight": 1,
         },
         Object {
+          "group": "best-practices-trust-safety",
+          "id": "csp-xss",
+          "weight": 0,
+        },
+        Object {
           "group": "best-practices-ux",
           "id": "password-inputs-can-be-pasted-into",
           "weight": 1,
@@ -851,13 +853,13 @@ Object {
             "unminified-css",
             "unused-css-rules",
           ],
-          "weight": 15,
+          "weight": 10,
         },
         Object {
           "acronym": "SI",
           "group": "metrics",
           "id": "speed-index",
-          "weight": 15,
+          "weight": 10,
         },
         Object {
           "acronym": "LCP",
@@ -887,7 +889,7 @@ Object {
           "acronym": "TTI",
           "group": "metrics",
           "id": "interactive",
-          "weight": 15,
+          "weight": 10,
         },
         Object {
           "acronym": "TBT",
@@ -903,7 +905,7 @@ Object {
             "duplicated-javascript",
             "legacy-javascript",
           ],
-          "weight": 25,
+          "weight": 30,
         },
         Object {
           "acronym": "CLS",
@@ -914,12 +916,7 @@ Object {
             "non-composited-animations",
             "unsized-images",
           ],
-          "weight": 5,
-        },
-        Object {
-          "acronym": "FCI",
-          "id": "first-cpu-idle",
-          "weight": 0,
+          "weight": 15,
         },
         Object {
           "id": "max-potential-fid",
@@ -928,10 +925,6 @@ Object {
         Object {
           "acronym": "FMP",
           "id": "first-meaningful-paint",
-          "weight": 0,
-        },
-        Object {
-          "id": "estimated-input-latency",
           "weight": 0,
         },
         Object {
@@ -976,7 +969,7 @@ Object {
         },
         Object {
           "group": "load-opportunities",
-          "id": "uses-webp-images",
+          "id": "modern-image-formats",
           "weight": 0,
         },
         Object {

@@ -9,7 +9,7 @@
 
 /* eslint-env browser */
 
-/* globals I18n webtreemap strings TreemapUtil Base64 Tabulator Cell Row DragAndDrop Logger GithubApi */
+/* globals I18n webtreemap strings TreemapUtil TextEncoding Tabulator Cell Row DragAndDrop Logger GithubApi */
 
 const DUPLICATED_MODULES_IGNORE_THRESHOLD = 1024;
 const DUPLICATED_MODULES_IGNORE_ROOT_RATIO = 0.01;
@@ -64,9 +64,21 @@ class TreemapViewer {
     /** @type {WeakMap<LH.Treemap.Node, LH.Treemap.NodePath>} */
     this.nodeToPathMap = new WeakMap();
 
-    this.documentUrl = options.lhr.requestedUrl;
+    this.documentUrl = new URL(options.lhr.requestedUrl);
     this.el = el;
     this.getHueForD1NodeName = TreemapUtil.stableHasher(TreemapUtil.COLOR_HUES);
+
+    // These depth one node uses the network URL for the name, but we want
+    // to elide common parts of the URL so text fits better in the UI.
+    for (const node of this.depthOneNodesByGroup.scripts) {
+      try {
+        const url = new URL(node.name);
+        node.name = TreemapUtil.elideSameOrigin(url, this.documentUrl);
+        if (url.href === this.documentUrl.href) {
+          node.name += ' (inline)';
+        }
+      } catch {}
+    }
 
     /* eslint-disable no-unused-expressions */
     /** @type {LH.Treemap.Node} */
@@ -94,8 +106,8 @@ class TreemapViewer {
 
   createHeader() {
     const urlEl = TreemapUtil.find('a.lh-header--url');
-    urlEl.textContent = this.documentUrl;
-    urlEl.href = this.documentUrl;
+    urlEl.textContent = this.documentUrl.toString();
+    urlEl.href = this.documentUrl.toString();
 
     this.createBundleSelector();
   }
@@ -215,7 +227,7 @@ class TreemapViewer {
   wrapNodesInNewRootNode(nodes) {
     const children = [...nodes];
     return {
-      name: this.documentUrl,
+      name: this.documentUrl.toString(),
       resourceBytes: children.reduce((acc, cur) => cur.resourceBytes + acc, 0),
       unusedBytes: children.reduce((acc, cur) => (cur.unusedBytes || 0) + acc, 0),
       children,
@@ -432,11 +444,6 @@ class TreemapViewer {
         } else {
           name = path.join('/');
         }
-
-        // Elide the document URL.
-        if (name.startsWith(this.currentTreemapRoot.name)) {
-          name = name.replace(this.currentTreemapRoot.name, '//');
-        }
       }
 
       data.push({
@@ -468,7 +475,7 @@ class TreemapViewer {
       const dataRow = cell.getRow().getData();
       if (!dataRow.bundleNode) return '';
 
-      return `${dataRow.bundleNode.name} (bundle) ${dataRow.name}`;
+      return `${dataRow.bundleNode.name} ${dataRow.name}`;
     };
 
     /** @param {Tabulator.CellComponent} cell */
@@ -568,7 +575,7 @@ class TreemapViewer {
     const total = this.currentTreemapRoot[partitionBy];
 
     const parts = [
-      TreemapUtil.elide(node.name, 60),
+      TreemapUtil.elide(node.name || '', 60),
     ];
 
     if (bytes !== undefined && total !== undefined) {
@@ -620,8 +627,8 @@ class TreemapViewer {
 
       // Shade the element to communicate coverage.
       if (this.currentViewMode.id === 'unused-bytes') {
-        const pctUsed = (1 - (node.unusedBytes || 0) / node.resourceBytes) * 100;
-        node.dom.style.setProperty('--pctUsed', `${pctUsed}%`);
+        const pctUnused = (node.unusedBytes || 0) / node.resourceBytes * 100;
+        node.dom.style.setProperty('--pctUnused', `${pctUnused}%`);
       }
     });
   }
@@ -889,7 +896,7 @@ async function main() {
   const queryParams = new URLSearchParams(window.location.search);
   const gzip = queryParams.get('gzip') === '1';
   const hashParams = location.hash ?
-    JSON.parse(Base64.decode(location.hash.substr(1), {gzip})) :
+    JSON.parse(TextEncoding.fromBase64(location.hash.substr(1), {gzip})) :
     {};
   /** @type {Record<string, any>} */
   const params = {

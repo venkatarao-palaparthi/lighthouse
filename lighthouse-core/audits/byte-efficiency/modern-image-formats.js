@@ -25,13 +25,13 @@ const str_ = i18n.createMessageInstanceIdFn(__filename, UIStrings);
 
 const IGNORE_THRESHOLD_IN_BYTES = 8192;
 
-class UsesWebPImages extends ByteEfficiencyAudit {
+class ModernImageFormats extends ByteEfficiencyAudit {
   /**
    * @return {LH.Audit.Meta}
    */
   static get meta() {
     return {
-      id: 'uses-webp-images',
+      id: 'modern-image-formats',
       title: str_(UIStrings.title),
       description: str_(UIStrings.description),
       scoreDisplayMode: ByteEfficiencyAudit.SCORING_MODES.NUMERIC,
@@ -95,12 +95,17 @@ class UsesWebPImages extends ByteEfficiencyAudit {
           continue;
         }
 
-        const naturalHeight = imageElement.naturalHeight;
-        const naturalWidth = imageElement.naturalWidth;
+        // Skip if we couldn't collect natural image size information.
+        if (!imageElement.naturalDimensions) continue;
+        const naturalHeight = imageElement.naturalDimensions.height;
+        const naturalWidth = imageElement.naturalDimensions.width;
         // If naturalHeight or naturalWidth are falsy, information is not valid, skip.
         if (!naturalWidth || !naturalHeight) continue;
 
-        webpSize = UsesWebPImages.estimateWebPSizeFromDimensions({naturalHeight, naturalWidth});
+        webpSize = ModernImageFormats.estimateWebPSizeFromDimensions({
+          naturalHeight,
+          naturalWidth,
+        });
         fromProtocol = false;
       }
 
@@ -108,7 +113,7 @@ class UsesWebPImages extends ByteEfficiencyAudit {
 
       const url = URL.elideDataURI(image.url);
       const isCrossOrigin = !URL.originsMatch(pageURL, image.url);
-      const webpSavings = UsesWebPImages.computeSavings({...image, webpSize: webpSize});
+      const webpSavings = ModernImageFormats.computeSavings({...image, webpSize: webpSize});
 
       items.push({
         url,
@@ -135,5 +140,5 @@ class UsesWebPImages extends ByteEfficiencyAudit {
   }
 }
 
-module.exports = UsesWebPImages;
+module.exports = ModernImageFormats;
 module.exports.UIStrings = UIStrings;

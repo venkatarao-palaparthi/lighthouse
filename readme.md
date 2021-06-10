@@ -26,6 +26,7 @@
   * [Can I configure the lighthouse run?](#can-i-configure-the-lighthouse-run)
   * [How does Lighthouse use network throttling, and how can I make it better?](#how-does-lighthouse-use-network-throttling-and-how-can-i-make-it-better)
   * [Are results sent to a remote server?](#are-results-sent-to-a-remote-server)
+  * [How do I get localized Lighthouse results?](#how-do-i-get-localized-lighthouse-results-via-the-cli)
   * [How do I author custom audits to extend Lighthouse?](#how-do-i-author-custom-audits-to-extend-lighthouse)
   * [How do I contribute?](#how-do-i-contribute)
 
@@ -382,11 +383,11 @@ Other awesome open source projects that use Lighthouse.
 * **[lighthouse-badges](https://github.com/emazzotta/lighthouse-badges)** - Generate gh-badges (shields.io) based on Lighthouse performance.
 * **[lighthouse-batch](https://www.npmjs.com/package/lighthouse-batch)** - Run Lighthouse over a number of sites and generate a summary of their metrics/scores.
 * **[lighthouse-batch-parallel](https://www.npmjs.com/package/lighthouse-batch-parallel)** - Run multiple Lighthouse runs in parallel to accelerate the data collecting process, get the result stream (csv, json, js object) in your own process (warning: performance results may be volatile).
-* **[lighthouse-check-action](https://github.com/foo-software/lighthouse-check-action)** - A Github Action to run Lighthouse in a workflow, featuring Slack notifications and report upload to S3.
+* **[lighthouse-check-action](https://github.com/foo-software/lighthouse-check-action)** - A GitHub Action to run Lighthouse in a workflow, featuring Slack notifications and report upload to S3.
 * **[lighthouse-check-orb](https://circleci.com/orbs/registry/orb/foo-software/lighthouse-check)** - A CircleCI Orb to run Lighthouse in a workflow, featuring Slack notifications and report upload to S3.
 * **[andreasonny83/lighthouse-ci](https://github.com/andreasonny83/lighthouse-ci)** - Run Lighthouse and assert scores satisfy your custom thresholds.
 * **[GoogleChrome/lighthouse-ci](https://github.com/GoogleChrome/lighthouse-ci)** - (**official**) Automate running Lighthouse for every commit, viewing the changes, and preventing regressions.
-* **[lighthouse-ci-action](https://github.com/treosh/lighthouse-ci-action)** - A Github Action that makes it easy to run Lighthouse in CI and keep your pages small using performance budgets.
+* **[lighthouse-ci-action](https://github.com/treosh/lighthouse-ci-action)** - A GitHub Action that makes it easy to run Lighthouse in CI and keep your pages small using performance budgets.
 * **[lighthouse-cron](https://github.com/thearegee/lighthouse-cron)** - Cron multiple batch Lighthouse audits and emit results for sending to remote server.
 * **[lighthouse-gh-reporter](https://github.com/carlesnunez/lighthouse-gh-reporter)** - Run Lighthouse in CI and report back in a comment on your pull requests
 * **[lighthouse-hue](https://github.com/ebidel/lighthouse-hue)** - Set the color of Philips Hue lights based on a Lighthouse score
@@ -441,6 +442,12 @@ Read more in our [guide to network throttling](./docs/throttling.md).
 
 Nope. Lighthouse runs locally, auditing a page using a local version of the Chrome browser installed on the
 machine. Report results are never processed or beaconed to a remote server.
+
+### How do I get localized Lighthouse results via the CLI?
+
+Starting in Lighthouse 8.0, Lighthouse relies entirely on native `Intl` support and no longer uses an `Intl` polyfill. If you're using Node 13 or later, there should be no issue because Node is now [built with `full-icu` by default](https://nodejs.medium.com/node-js-12-to-lts-and-node-js-13-is-here-e28d6a4a2bd#9514).
+
+However, if you're using Node 12 (when `small-icu` was the default) or another `small-icu` Node build, you may see Lighthouse log messages about your locale not being available. To remedy this, you can upgrade to Node 14+ or manually install ICU data by using the [`full-icu`](https://www.npmjs.com/package/full-icu) module and the [`--icu-data-dir` node flag](https://nodejs.org/api/intl.html#intl_providing_icu_data_at_runtime) at launch.
 
 ### How do I author custom audits to extend Lighthouse?
 

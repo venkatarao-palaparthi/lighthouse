@@ -12,6 +12,7 @@ const {
   createMockOnceFn,
   createMockSendCommandFn,
 } = require('../../gather/mock-commands.js');
+const {defaultSettings} = require('../../../config/constants.js');
 
 /**
  * @fileoverview Mock fraggle rock driver for testing.
@@ -39,7 +40,7 @@ function createMockSession() {
 }
 
 /**
- * @param {LH.Gatherer.FRGathererInstance<LH.Gatherer.DependencyKey>['meta']} meta
+ * @param {LH.Gatherer.AnyFRGathererInstance['meta']} meta
  */
 function createMockGathererInstance(meta) {
   return {
@@ -50,7 +51,7 @@ function createMockGathererInstance(meta) {
     stopSensitiveInstrumentation: jest.fn(),
     getArtifact: jest.fn(),
 
-    /** @return {LH.Gatherer.FRGathererInstance} */
+    /** @return {LH.Gatherer.AnyFRGathererInstance} */
     asGatherer() {
       // @ts-expect-error - We'll rely on the tests passing to know this matches.
       return this;
@@ -134,6 +135,7 @@ function createMockContext() {
     gatherMode: 'navigation',
     computedCache: new Map(),
     dependencies: {},
+    settings: defaultSettings,
 
     /** @return {LH.Gatherer.FRTransitionalContext} */
     asContext() {
@@ -156,7 +158,10 @@ function mockDriverSubmodules() {
     prepareTargetForIndividualNavigation: jest.fn(),
   };
   const storageMock = {clearDataForOrigin: jest.fn()};
-  const emulationMock = {clearThrottling: jest.fn()};
+  const emulationMock = {
+    clearThrottling: jest.fn(),
+    emulate: jest.fn(),
+  };
   const networkMock = {
     fetchResponseBodyFromCache: jest.fn(),
   };
@@ -167,6 +172,7 @@ function mockDriverSubmodules() {
     prepareMock.prepareTargetForIndividualNavigation = jest.fn().mockResolvedValue({warnings: []});
     storageMock.clearDataForOrigin = jest.fn();
     emulationMock.clearThrottling = jest.fn();
+    emulationMock.emulate = jest.fn();
     networkMock.fetchResponseBodyFromCache = jest.fn().mockResolvedValue('');
   }
 

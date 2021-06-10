@@ -20,8 +20,8 @@ const UIStrings = {
   title: 'Ensure CSP is effective against XSS attacks',
   /** Description of a Lighthouse audit that evaluates the security of a page's CSP. This is displayed after a user expands the section to see more. No character length limits. 'Learn More' becomes link text to additional documentation. "CSP" stands for "Content Security Policy". "XSS" stands for "Cross Site Scripting". "CSP" and "XSS" do not need to be translated. */
   description: 'A strong Content Security Policy (CSP) significantly ' +
-    'reduces the risk of XSS attacks. ' +
-    '[Learn more](https://csp.withgoogle.com/docs/index.html)',
+    'reduces the risk of cross-site scripting (XSS) attacks. ' +
+    '[Learn more](https://web.dev/strict-csp/)',
   /** Summary text for the results of a Lighthouse audit that evaluates the security of a page's CSP. This is displayed if no CSP is being enforced. "CSP" stands for "Content Security Policy". "CSP" does not need to be translated. */
   noCsp: 'No CSP found in enforcement mode',
   /** Message shown when one or more CSPs are defined in a <meta> tag. Shown in a table with a list of other CSP bypasses and warnings. "CSP" stands for "Content Security Policy". "CSP" and "HTTP" do not need to be translated. */
@@ -29,6 +29,10 @@ const UIStrings = {
     'Consider defining the CSP in an HTTP header if you can.',
   /** Label for a column in a data table; entries will be a directive of a CSP. "CSP" stands for "Content Security Policy". */
   columnDirective: 'Directive',
+  /** Label for a column in a data table; entries will be the severity of an issue with the CSP. "CSP" stands for "Content Security Policy". */
+  columnSeverity: 'Severity',
+  /** Table item value calling out the presence of a syntax error. */
+  itemSeveritySyntax: 'Syntax',
 };
 
 const str_ = i18n.createMessageInstanceIdFn(__filename, UIStrings);
@@ -74,14 +78,14 @@ class CspXss extends Audit {
 
   /**
    * @param {Finding} finding
-   * @param {string=} icon
+   * @param {LH.IcuMessage=} severity
    * @return {LH.Audit.Details.TableItem}
    */
-  static findingToTableItem(finding, icon) {
+  static findingToTableItem(finding, severity) {
     return {
       directive: finding.directive,
       description: getTranslatedDescription(finding),
-      severity: icon,
+      severity,
     };
   }
 
@@ -98,7 +102,7 @@ class CspXss extends Audit {
       const items = syntaxFindings[i].map(f => this.findingToTableItem(f));
       if (!items.length) continue;
       results.push({
-        severity: 'Syntax',
+        severity: str_(UIStrings.itemSeveritySyntax),
         description: {
           type: 'code',
           value: rawCsps[i],
@@ -124,7 +128,7 @@ class CspXss extends Audit {
       return {
         score: 0,
         results: [{
-          severity: 'Bypass',
+          severity: str_(i18n.UIStrings.itemSeverityHigh),
           description: str_(UIStrings.noCsp),
           directive: undefined,
         }],
@@ -135,14 +139,14 @@ class CspXss extends Audit {
 
     const results = [
       ...this.constructSyntaxResults(syntax, rawCsps),
-      ...bypasses.map(f => this.findingToTableItem(f, 'Bypass')),
-      ...warnings.map(f => this.findingToTableItem(f, 'Warning')),
+      ...bypasses.map(f => this.findingToTableItem(f, str_(i18n.UIStrings.itemSeverityHigh))),
+      ...warnings.map(f => this.findingToTableItem(f, str_(i18n.UIStrings.itemSeverityMedium))),
     ];
 
     // Add extra warning for a CSP defined in a meta tag.
     if (cspMetaTags.length) {
       results.push({
-        severity: 'Warning',
+        severity: str_(i18n.UIStrings.itemSeverityMedium),
         description: str_(UIStrings.metaTagMessage),
         directive: undefined,
       });
@@ -165,6 +169,7 @@ class CspXss extends Audit {
       /* eslint-disable max-len */
       {key: 'description', itemType: 'text', subItemsHeading: {key: 'description'}, text: str_(i18n.UIStrings.columnDescription)},
       {key: 'directive', itemType: 'code', subItemsHeading: {key: 'directive'}, text: str_(UIStrings.columnDirective)},
+      {key: 'severity', itemType: 'text', subItemsHeading: {key: 'severity'}, text: str_(UIStrings.columnSeverity)},
       /* eslint-enable max-len */
     ];
     const details = Audit.makeTableDetails(headings, results);

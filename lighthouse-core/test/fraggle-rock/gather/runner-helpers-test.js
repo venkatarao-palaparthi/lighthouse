@@ -7,20 +7,25 @@
 
 const helpers = require('../../../fraggle-rock/gather/runner-helpers.js');
 const Gatherer = require('../../../fraggle-rock/gather/base-gatherer.js');
+const {defaultSettings} = require('../../../config/constants.js');
 const {createMockDriver, createMockGathererInstance} = require('./mock-driver.js');
 
 /* eslint-env jest */
 
 describe('collectArtifactDependencies', () => {
-  /** @type {LH.Config.ArtifactDefn} */
+  /** @type {LH.Config.AnyArtifactDefn} */
   let artifact;
   /** @type {Record<string, any>} */
   let artifactStateById;
 
   beforeEach(() => {
+    class GathererWithDependency extends Gatherer {
+      meta = {...new Gatherer().meta, dependencies: {ImageElements: Symbol('')}};
+    }
+
     artifact = {
       id: 'Artifact',
-      gatherer: {instance: new Gatherer()},
+      gatherer: {instance: new GathererWithDependency()},
       dependencies: {ImageElements: {id: 'Dependency'}},
     };
     artifactStateById = {
@@ -130,6 +135,7 @@ describe('collectPhaseArtifacts', () => {
           phase,
           gatherMode: /** @type {any} */ (gatherMode),
           computedCache: new Map(),
+          settings: defaultSettings,
         });
         expect(artifactState[phase]).toEqual({
           Timespan: expect.any(Promise),
@@ -152,6 +158,7 @@ describe('collectPhaseArtifacts', () => {
       gatherMode: 'navigation',
       phase: 'getArtifact',
       computedCache: new Map(),
+      settings: defaultSettings,
     });
     expect(await artifactState.getArtifact.Snapshot).toEqual({type: 'snapshot'});
     expect(await artifactState.getArtifact.Timespan).toEqual({type: 'timespan'});
@@ -160,10 +167,19 @@ describe('collectPhaseArtifacts', () => {
 
   it('should pass dependencies to gatherers', async () => {
     const {artifactDefinitions: artifacts_, gatherers} = createGathererSet();
-    const gatherer = artifacts_[1].gatherer;
+    const gatherer =
+      /** @type {{instance: LH.Gatherer.FRGathererInstance}} */
+      (artifacts_[1].gatherer);
+    const imageElementsGatherer =
+      /** @type {{instance: LH.Gatherer.FRGathererInstance<'ImageElements'>}} */
+      (artifacts_[1].gatherer);
     const artifactDefinitions = [
       {id: 'Dependency', gatherer},
-      {id: 'Snapshot', gatherer, dependencies: {ImageElements: {id: 'Dependency'}}},
+      {
+        id: 'Snapshot',
+        gatherer: imageElementsGatherer,
+        dependencies: {ImageElements: {id: 'Dependency'}},
+      },
     ];
 
     await helpers.collectPhaseArtifacts({
@@ -173,6 +189,7 @@ describe('collectPhaseArtifacts', () => {
       gatherMode: 'navigation',
       phase: 'getArtifact',
       computedCache: new Map(),
+      settings: defaultSettings,
     });
     expect(artifactState.getArtifact).toEqual({
       Dependency: expect.any(Promise),
@@ -204,6 +221,7 @@ describe('collectPhaseArtifacts', () => {
       gatherMode: 'navigation',
       phase: 'getArtifact',
       computedCache: new Map(),
+      settings: defaultSettings,
     });
     expect(artifactState.getArtifact).toEqual({
       Snapshot: expect.any(Promise),

@@ -66,7 +66,7 @@ async function run() {
       buildStrings(),
       {path: '../../lighthouse-core/report/html/renderer/logger.js'},
       {path: '../../lighthouse-core/report/html/renderer/i18n.js'},
-      {path: '../../lighthouse-core/report/html/renderer/base64.js'},
+      {path: '../../lighthouse-core/report/html/renderer/text-encoding.js'},
       {path: '../../lighthouse-viewer/app/src/drag-and-drop.js'},
       {path: '../../lighthouse-viewer/app/src/github-api.js'},
       {path: '../../lighthouse-viewer/app/src/firebase-auth.js'},
