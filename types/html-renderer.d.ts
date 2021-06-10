@@ -36,7 +36,6 @@ declare global {
   var Util: typeof _Util;
   var TextEncoding: typeof _TextEncoding;
   var prepareLabData: typeof _prepareLabData;
-  var pako: typeof import('pako');
   var CompressionStream: {
     prototype: CompressionStream,
     new (format: string): CompressionStream,

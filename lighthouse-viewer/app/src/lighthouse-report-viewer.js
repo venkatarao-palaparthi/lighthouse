@@ -5,7 +5,7 @@
  */
 'use strict';
 
-/* global DOM, ViewerUIFeatures, ReportRenderer, DragAndDrop, GithubApi, PSIApi, logger, idbKeyval, Base64 */
+/* global DOM, ViewerUIFeatures, ReportRenderer, DragAndDrop, GithubApi, PSIApi, logger, idbKeyval, TextEncoding */
 
 /** @typedef {import('./psi-api').PSIParams} PSIParams */
 
@@ -105,7 +105,7 @@ class LighthouseReportViewer {
     const jsonurl = params.get('jsonurl');
     const gzip = params.get('gzip') === '1';
     const hashParams = location.hash ?
-      JSON.parse(Base64.decode(location.hash.substr(1), {gzip})) :
+      JSON.parse(TextEncoding.fromBase64(location.hash.substr(1), {gzip})) :
       {};
 
     if (hashParams.lhr) {
