@@ -148,7 +148,7 @@
     "jsonlint-mod": "^1.7.6",
     "lighthouse-plugin-publisher-ads": "^1.4.1",
     "mime-types": "^2.1.30",
-    "node-fetch": "^2.6.1",
+    "node-fetch": "^3.1.1",
     "npm-run-posix-or-windows": "^2.0.2",
     "package-json-versionify": "^1.0.4",
     "pako": "^2.0.3",
